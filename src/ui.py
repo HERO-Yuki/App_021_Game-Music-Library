@@ -451,6 +451,25 @@ def load_custom_css():
            13. ユーティリティ
            ========================================= */
         [data-testid="stSidebar"] { display: none !important; }
+
+        .filter-tag {
+            display: inline-flex;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            border: 1px solid rgba(0, 219, 222, 0.3);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .filter-tag-label {
+            color: #00dbde;
+            font-weight: 700;
+            margin-right: 6px;
+        }
         </style>
     """, unsafe_allow_html=True)
 
@@ -869,13 +888,45 @@ def render_result_count_badge(result_count):
         badge_text = f"{result_count}件"
     
     return f"""
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 1rem;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 0.5rem;">
             <h2 style="margin: 0; color: #00dbde; font-size: 2rem;">🔍 検索結果</h2>
             <span style="background-color: {badge_color}; color: #ffffff; padding: 6px 16px; border-radius: 20px; font-weight: 700; font-size: 1.1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
                 {badge_text}
             </span>
         </div>
     """
+
+def render_active_filters(filters, search_query=""):
+    """
+    現在適用されている検索条件をタグ形式で表示する
+    """
+    tags_html = '<div style="display: flex; flex-wrap: wrap; margin-bottom: 1.5rem;">'
+    has_any_filter = False
+
+    # キーワード検索
+    if search_query and search_query.strip():
+        tags_html += f'<div class="filter-tag"><span class="filter-tag-label">キーワード:</span> {search_query}</div>'
+        has_any_filter = True
+
+    # フィルタ条件
+    filter_labels = {
+        'テーマ': 'テーマ',
+        'ジャンル': 'ジャンル',
+        'プラットフォーム': 'ハード',
+        '発表者': '発表者'
+    }
+
+    for key, label in filter_labels.items():
+        selected_items = filters.get(key, [])
+        if selected_items:
+            has_any_filter = True
+            for item in selected_items:
+                tags_html += f'<div class="filter-tag"><span class="filter-tag-label">{label}:</span> {item}</div>'
+    
+    tags_html += '</div>'
+
+    if has_any_filter:
+        st.markdown(tags_html, unsafe_allow_html=True)
 
 def render_entrance_screen(latest_theme):
     """

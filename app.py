@@ -115,6 +115,11 @@ def main():
             # 検索結果件数の視覚的強調（カード/バッジ形式、色分け）
             result_count = len(processed_df)
             st.markdown(render_result_count_badge(result_count), unsafe_allow_html=True)
+            
+            # 適用中のフィルタをタグ形式で表示
+            from src.ui import render_active_filters
+            render_active_filters(filters, search_query)
+            
             display_results(processed_df, key="ag_search_results")
 
         # アーカイブ動画の表示
