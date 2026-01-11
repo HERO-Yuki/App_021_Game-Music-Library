@@ -130,11 +130,9 @@ def main():
         if 'random_song' not in st.session_state:
             st.session_state['random_song'] = df.sample(1)
         
-        # ルーレット演出用の候補データを準備
-        candidates_df = processed_df if not processed_df.empty else df
-        
-        if render_random_card(st.session_state['random_song'].iloc[0], candidates_df, key_suffix="top"):
-            st.session_state['random_song'] = candidates_df.sample(1)
+        # 常時全曲から選ぶように変更
+        if render_random_card(st.session_state['random_song'].iloc[0], df, key_suffix="top"):
+            st.session_state['random_song'] = df.sample(1)
             st.rerun()
 
         if not is_active:
