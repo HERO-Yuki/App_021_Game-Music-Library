@@ -1,0 +1,8 @@
+app:
+  name: "Game-Music-Library"
+  version: "0.1.0"
+  debug: true
+
+settings:
+  output_dir: "output"
+  log_level: "INFO"

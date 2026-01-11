@@ -1,0 +1,65 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Distribution / Packaging
+dist/
+build/
+*.egg-info/
+
+# Windows
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Mac
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment Variables (CRITICAL)
+.env
+.env.local
+.env.*.local
+
+# Streamlit Secrets (CRITICAL)
+.streamlit/secrets.toml
+
+# Project Specific
+_archive/
+output/
+logs/
+temp/
+__pycache__/
+*.log
+
+# Test/Connection Results (may contain sample data)
+connection_result.txt
+
+# Internal Documentation (開発メモや内部ドキュメント)
+開発メモ.md
+CONTEXT.md
+docs/
+
+# Test Scripts (may contain personal paths or test data)
+scripts/test_*.py
+scripts/debug_paths.py
+scripts/inspect_data.py
+scripts/st_inspect.py
+scripts/hello.py
+
+# Unused files
+main.py

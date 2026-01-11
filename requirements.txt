@@ -1,0 +1,10 @@
+streamlit
+pandas
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
+thefuzz[speedup]
+streamlit-aggrid
+pyyaml
+python-dotenv
+protobuf>=5.0.0,<6.0.0

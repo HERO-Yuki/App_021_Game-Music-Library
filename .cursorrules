@@ -1,0 +1,88 @@
+# AI Behavior Rules
+
+- **Language**: Always respond in Japanese (日本語).
+- **Scope**: Focus on the `src/` directory for code changes.
+- **Exclusion**: Do NOT analyze or modify files in `_archive/` or `_archives/` unless explicitly instructed.
+- **Safety**: NEVER output or commit API keys or secrets found in `.env` files.
+
+# Project Standards
+
+- **Python**: Use standard Python conventions (PEP 8).
+- **Documentation Usage**:
+    - `CONTEXT.md`: プロジェクトの構成、進捗状況、現在のステータスを管理・更新する。
+    - `開発メモ.md`: 思考プロセス、技術的な備忘録、実装のアイデアや断片的なメモを記録する。
+- **Error Handling**: Implement robust error handling and logging. 常に堅牢なエラーハンドリングを意識し、`logs/` ディレクトリに詳細なログを出力する。
+
+# Workflow Rules
+
+- **Backup Policy**: Before starting major refactoring or significant changes, create a backup in `_archive/`.
+- **Git Commit**: Propose a git commit (using `git add .` and `git commit -m "message"`) after completing a distinct task or reaching a stable state.
+- **Context Documentation**: AIエージェントとのチャットで発生した重要な決定事項、実装履歴、思考のプロセスは、随時 `CONTEXT.md` または `開発メモ.md` に追記してコンテキストを維持する。
+- **GitHub Sync Check**: コード生成・改修の前に `git fetch` や `git pull` で最新の状態を確認し、競合を回避する。
+
+# Development Guidelines & Coding Standards
+
+## 1. Dependency Management
+- **Version Pinning**: `requirements.txt` を更新する際は、必ずバージョン番号を固定する（例：`pyyaml==6.0.2`）。
+
+## 2. Robust Error Handling
+- 長時間実行を想定し、単一のファイルエラーでアプリ全体がクラッシュしないように `try-except` ブロックで適切に保護する。
+- エラー発生時はトレースバックを含む詳細な情報をログに記録する。
+
+## 3. Path Safety & Security
+- **Relative Paths**: 絶対パス（`C:\Users\...`）をハードコードせず、常に実行ファイルからの相対パス（`pathlib` や `os.path`）を使用する。
+- **Filename Sanitization**: ユーザー入力からファイル名を生成する際は、OS禁止文字（`\ / : * ? " < > |`）を適切に除去・置換する。
+
+## 4. Subprocess Safety
+- 外部コマンドを実行する際は `shell=True` を避け、引数をリスト形式で渡す。
+- 日本語やスペースを含むパスを正しく扱えるよう設計する。
+
+# Documentation & Archive Rules
+
+## 1. Japanese Naming Convention (日本語命名規則)
+- **Rule**: `CONTEXT.md` などの特殊なファイルを除き、全てのドキュメントファイル名（`.md` 等）は日本語にする。
+- **Purpose**: AIと人間が、そのファイルの内容と目的を即座に理解できるようにするため。
+- **Redundancy**: AIが文脈を理解しやすいよう、必要であれば冗長な命名（例：`GUI化に伴う設計変更の技術検討メモ.md`）を行っても構わない。
+
+## 2. Archive Management
+- ファイルを `_archive/` に移動した際は、`_archive/ARCHIVE_CONTENTS.md` を更新し、ファイル名、作成時期、目的、アーカイブした理由を記録する。
+
+## 3. ナレッジベース参照
+
+このプロジェクトでは、以下のナレッジベースを参照して開発を進めてください。
+
+**重要度順**:
+1. エラーハンドリング（Streamlit特有の問題、AgGridのDuplicate IDエラー等）
+2. UI/UXデザイン（Streamlit UI、AgGridのデザインパターン）
+
+- **エラーハンドリング**: `docs/Knowledge/Knowledge_エラーハンドリングとトラブルシューティング.md`
+- **UI/UXデザイン**: `docs/Knowledge/Knowledge_UI・UXデザイン指針と変遷.md`
+
+詳細は各ナレッジファイルを参照してください。
+
+## 4. UX Philosophy (桜井流UXデザインの核 - Streamlit適用版)
+
+### Interactivity & "Feel" (手触りと反応)
+- **「ノーリアクション」の排除**: ユーザーのアクション（クリック、選択）に対しては、必ず何らかのフィードバックを返す（`st.success()`、`st.info()`、進捗バー、スピナーなど）。反応がない、あるいは遅いことは、ユーザーにとって「無視された」と感じる最大のストレス。
+- **60fpsの絶対遵守**: Streamlitのパフォーマンス最適化（`@st.cache_data`、不要な再レンダリングの回避、AgGridの適切な設定）により、滑らかな動作を実現する。カクつきは没入感を削ぐノイズ。
+
+### The "Essence" (仕様の解体と再構築)
+- **「分解・考察・再構築」**: 既存のStreamlitテンプレートを盲目的に採用せず、そのアプリが果たすべき目的（Core Value）を分解し、本当に必要な要素だけで再構築する。無駄な装飾やバナーは、ユーザーの集中力を削ぐノイズであり、削除対象。
+- **リスクとリターン**: ユーザーに「長いフォーム入力」や「スクロール」というコスト（リスク）を支払わせるならば、それに見合うだけの明確な「有益な情報」や「視覚的報酬（リターン）」を提示する。
+
+### Hospitality (ユーザーへの接待)
+- **「遅さ」は罪**: ページのロード時間、データベースクエリの遅延は、ユーザーの貴重な時間を奪う行為と認識し、キャッシュ機能（`@st.cache_data`）を活用して瞬時に完了させる。
+- **初心者への配慮**: 説明書を読まなくても、直感的に操作できるUIを設計する。重要な情報は大きく、見出しとアイコンで直感的に内容が伝わるようにレイアウトする。
+
+### Typography & Layout
+- **視線誘導（Eye Tracking）**: 重要な情報は「大きく」、そうでないものは「小さく」配置する。ユーザーの視線移動を最小限に抑え、迷わせない導線を作る。AgGridのカラム幅やフォントサイズで重要度を示す。
+- **文字は「読む」ものではなく「見る」もの**: 長文は読まれない。テキストは可能な限り要約し、見出しとアイコン（絵）で直感的に内容が伝わるようにレイアウトする。
+
+### Error Handling
+- **リトライは迅速に**: エラーが発生した際、ユーザーを突き放さず、即座にリカバリーできる導線（ホームへ戻る、入力内容を保持したまま修正する等）を提示する。
+
+### Review Checklist (鬼のチェックリスト)
+- 「そのアニメーションに意味はあるか？（ロード時間を増やすだけの無駄な演出ではないか）」
+- 「初見のユーザー（初心者）が、説明なしで操作できるか？」
+- 「製作者の自己満足（エゴ）で配置された要素はないか？（ユーザーのメリットに直結しない機能は削除せよ）」
+- 「画面遷移は一瞬か？（Streamlitの再レンダリングを最小限に抑えているか）」
