@@ -12,7 +12,14 @@ def load_gsheet_data():
     """
     try:
         # secretsから認証情報を取得
-        creds_info = st.secrets["connections"]["gsheets"]
+        creds_dict = st.secrets["connections"]["gsheets"]
+        
+        # 辞書をコピーして、private_key内のエスケープされた改行を本物の改行に変換
+        # (Streamlit CloudのSecrets UIでの貼り付けミス対策)
+        creds_info = dict(creds_dict)
+        if "private_key" in creds_info:
+            creds_info["private_key"] = creds_info["private_key"].replace("\\n", "\n")
+
         spreadsheet_id = st.secrets["spreadsheet"]["id"]
         main_sheet_name = st.secrets["spreadsheet"]["sheet_name"]
         archive_sheet_name = "アーカイブ対応表" # 固定のシート名
