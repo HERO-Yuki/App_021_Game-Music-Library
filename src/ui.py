@@ -3,475 +3,605 @@ import pandas as pd
 import time
 import json
 import random
+import math
 from st_aggrid import AgGrid, GridOptionsBuilder, ColumnsAutoSizeMode, DataReturnMode
 
 def load_custom_css():
     """
-    アプリ全体の見た目を整えるカスタムCSSを注入
+    アプリ全体の見た目を整えるカスタムCSSを注入（目に優しいレトロモダンVer.）
     """
     st.markdown("""
         <style>
+        @import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap');
+
         /* =========================================
-           1. 全体レイアウト & 背景
+           1. 全体レイアウト & 変数定義
            ========================================= */
+        :root {
+            --bg-color: #0b1021;       /* 深い群青 (Midnight Deep) */
+            --card-bg: #15192b;        /* カード背景 */
+            --text-main: #d4d4d8;      /* オフホワイト (目に優しい) */
+            --text-sub: #9ca3af;       /* サブテキスト (グレー) */
+            --accent-primary: #4ec9b0; /* ソフトミント (Teal) */
+            --accent-secondary: #ce9178; /* レトロオレンジ (Warm) */
+            --accent-border: #2d3748;  /* 枠線色 */
+            --font-pixel: 'DotGothic16', sans-serif;
+            --font-game: 'Press Start 2P', cursive;
+            --font-base: 'Inter', sans-serif;
+        }
+
         .stApp {
-            background: linear-gradient(135deg, #0f0c29 0%, #1a1a2e 50%, #0f0c29 100%);
-            color: #f0f0f0;
+            background-color: var(--bg-color);
+            background-image: 
+                linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%),
+                linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            background-size: 100% 2px, 3px 100%; /* 走査線風エフェクト */
+            color: var(--text-main);
+            font-family: var(--font-base);
+        }
+
+        /* ピクセルフォント適用箇所 */
+        h2, h3, .stButton button, .pixel-font, .stat-value, .filter-tag, .stSelectbox p {
+            font-family: var(--font-pixel) !important;
+            letter-spacing: 0.05em;
         }
 
         .main .block-container {
-            background-color: rgba(0, 0, 0, 0.3);
-            border-radius: 20px;
-            padding: 2rem 3rem;
-            margin-top: 1rem;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 2rem 2rem;
+            max-width: 1400px;
         }
 
         /* =========================================
-           2. タイトル & サブテキスト
+           2. タイトルエリア
            ========================================= */
         .main-title {
-            background: linear-gradient(to right, #ffffff, #00dbde);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            font-size: 3rem !important;
-            font-weight: 900 !important;
+            font-family: var(--font-game) !important;
+            font-size: 2.5rem !important;
+            color: var(--accent-primary);
+            text-shadow: 4px 4px 0px var(--accent-border);
             text-align: center;
-            margin-bottom: 0.2rem;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+            letter-spacing: 0.1em;
         }
         .sub-text {
             text-align: center;
-            color: rgba(255, 255, 255, 0.7) !important; /* コントラスト比改善 */
-            font-size: 1rem !important; /* 本文と同じサイズに */
+            color: var(--text-sub) !important;
+            font-family: var(--font-base);
+            font-size: 0.9rem !important;
             margin-bottom: 2rem;
-            font-weight: 500;
-            opacity: 0.8; /* 重要度を視覚的に下げる */
+            border-bottom: 2px dashed var(--accent-border);
+            padding-bottom: 1.5rem;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
         }
 
-        /* 見出しの階層化 */
-        h2 {
-            font-size: 2rem !important; /* 32px */
-            font-weight: 700 !important;
-            color: #00dbde !important;
-            margin-top: 2rem !important;
-            margin-bottom: 1rem !important;
-        }
-
-        h3 {
-            font-size: 1.5rem !important; /* 24px */
-            font-weight: 600 !important;
-            color: #ffffff !important;
-            margin-top: 1.5rem !important;
-            margin-bottom: 0.75rem !important;
+        /* 見出しの共通化 */
+        h2, h3 {
+            color: var(--accent-secondary) !important;
         }
 
         /* =========================================
-           3. フォーム・入力関連
+           3. ダッシュボード (RPGステータス風)
            ========================================= */
-        label {
-            color: #ffffff !important;
-            font-weight: 600 !important;
+        .dashboard-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
         }
+        .stat-box {
+            background: var(--card-bg);
+            border: 2px solid var(--accent-border);
+            border-radius: 4px;
+            padding: 1rem;
+            text-align: center;
+            position: relative;
+            box-shadow: 4px 4px 0px rgba(0,0,0,0.3);
+            transition: transform 0.2s;
+        }
+        .stat-box:hover {
+            transform: translateY(-2px);
+            border-color: var(--accent-primary);
+        }
+        .stat-label {
+            display: block;
+            color: var(--text-sub);
+            font-size: 0.8rem;
+            margin-bottom: 0.2rem;
+            font-family: var(--font-pixel);
+        }
+        .stat-value {
+            display: block;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--accent-secondary);
+        }
+
+        /* =========================================
+           4. コンポーネント (入力、ボタン)
+           ========================================= */
         .stTextInput > div > div > input {
-            background-color: #ffffff !important;
-            color: #1a1a2e !important;
-            border: 2px solid rgba(0, 219, 222, 0.5) !important;
-            border-radius: 8px !important;
-            height: 3rem;
-            font-weight: 600 !important;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+            background-color: var(--card-bg) !important;
+            color: var(--text-main) !important;
+            border: 2px solid var(--accent-border) !important;
+            border-radius: 4px !important;
+            font-family: var(--font-pixel) !important;
+            font-size: 1.1rem;
         }
-        
-        /* テキスト入力のフォーカス状態 */
         .stTextInput > div > div > input:focus {
-            outline: 3px solid rgba(0, 219, 222, 0.8) !important;
-            outline-offset: 2px !important;
-            border-color: #00dbde !important;
-            box-shadow: 0 0 0 4px rgba(0, 219, 222, 0.2) !important;
+            border-color: var(--accent-primary) !important;
+            box-shadow: 0 0 0 2px rgba(78, 201, 176, 0.2) !important;
         }
 
-        /* =========================================
-           4. ボタン & タブ
-           ========================================= */
         .stButton > button {
-            background-color: rgba(255, 255, 255, 0.08) !important;
-            color: #ffffff !important;
-            border: 1px solid rgba(255, 255, 255, 0.2) !important;
-            border-radius: 8px !important;
-            font-weight: 600 !important;
-            min-height: 44px !important; /* タッチターゲットの最小サイズ */
-            min-width: 44px !important;
-            padding: 0.75rem 1.5rem !important;
-            /* 最適化されたtransition */
-            transition: background-color 0.2s ease, 
-                        color 0.2s ease, 
-                        box-shadow 0.2s ease,
-                        transform 0.1s ease !important;
-            will-change: background-color, transform; /* GPUアクセラレーションを促す */
+            background-color: var(--card-bg) !important;
+            color: var(--accent-primary) !important;
+            border: 2px solid var(--accent-primary) !important;
+            border-radius: 0px !important;
+            box-shadow: 3px 3px 0px var(--accent-border);
+            transition: all 0.1s;
         }
         .stButton > button:hover {
-            background-color: #00dbde !important;
-            color: #000000 !important;
-            box-shadow: 0 0 15px rgba(0, 219, 222, 0.4) !important;
-        }
-        
-        /* ボタンのフォーカス状態 */
-        .stButton > button:focus {
-            outline: 3px solid rgba(0, 219, 222, 0.8) !important;
-            outline-offset: 2px !important;
-            box-shadow: 0 0 0 4px rgba(0, 219, 222, 0.3) !important;
-        }
-        
-        /* ボタンのアクティブ状態（クリック時） */
-        .stButton > button:active {
-            transform: scale(0.98) !important;
-            box-shadow: 0 0 8px rgba(0, 219, 222, 0.3) !important;
-            transition: transform 0.1s ease, box-shadow 0.1s ease !important;
+            transform: translate(1px, 1px);
+            box-shadow: 2px 2px 0px var(--accent-border);
+            color: #fff !important;
+            background-color: var(--accent-primary) !important;
         }
 
-        .stTabs [data-baseweb="tab-list"] {
-            gap: 8px;
-            background-color: rgba(0, 0, 0, 0.2) !important;
-            padding: 8px;
-            border-radius: 12px;
-            margin-bottom: 2rem;
-        }
-        /* 選択されていないタブの基本スタイル */
-        .stTabs [data-baseweb="tab"] {
-            color: #ffffff !important;
-            background-color: transparent !important;
-        }
-        /* 選択されているタブ */
-        .stTabs [aria-selected="true"],
-        .stTabs [data-baseweb="tab"][aria-selected="true"] {
-            background-color: #00dbde !important;
-            color: #000000 !important;
-        }
-        /* タブのホバー状態（選択されていないタブ） */
-        .stTabs [data-baseweb="tab"]:not([aria-selected="true"]):hover {
-            background-color: rgba(255, 255, 255, 0.1) !important;
-            color: #ffffff !important;
-        }
-        /* タブ内のテキストのスタイルも確実に適用 */
-        .stTabs [data-baseweb="tab"] p,
-        .stTabs [data-baseweb="tab"] span {
-            color: inherit !important;
+        /* セレクトボックス */
+        .stSelectbox > div > button {
+             background-color: var(--card-bg) !important;
+             color: var(--text-main) !important;
+             border: 2px solid var(--accent-border) !important;
         }
 
         /* =========================================
-           5. 特殊コンポーネント (Expander, Cards, etc.)
+           5. カード型リスト
+           ========================================= */
+        .song-card-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            padding: 1rem 0;
+        }
+        .song-card {
+            background-color: var(--card-bg);
+            border: 2px solid var(--accent-border);
+            border-radius: 4px;
+            padding: 0.8rem;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 120px;
+            transition: all 0.2s ease;
+        }
+        .song-card:hover {
+            border-color: var(--accent-secondary);
+            box-shadow: 0 0 15px rgba(206, 145, 120, 0.1);
+            transform: translateY(-2px);
+        }
+        .card-header {
+            border-bottom: 1px dashed var(--accent-border);
+            padding-bottom: 0.4rem;
+            margin-bottom: 0.5rem;
+        }
+        .card-song-title {
+            font-family: var(--font-pixel);
+            font-size: 1rem;
+            color: var(--accent-primary);
+            margin: 0;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .card-game-title {
+            font-size: 0.8rem;
+            color: var(--text-main);
+            margin-top: 0.3rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .card-meta {
+            font-size: 0.75rem;
+            color: var(--text-sub);
+            margin-top: auto;
+            padding-top: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card-tag {
+            display: inline-block;
+            background: rgba(255,255,255,0.05);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            border: 1px solid var(--accent-border);
+        }
+
+        /* =========================================
+           6. その他UI
            ========================================= */
         .stExpander {
-            border: 1px solid rgba(0, 219, 222, 0.3) !important;
-            background-color: #1a1a2e !important;
-            border-radius: 12px !important;
-            margin-bottom: 1.5rem !important;
+            border: 2px solid var(--accent-border) !important;
+            background-color: var(--card-bg) !important;
+            border-radius: 4px !important;
         }
         
-        .random-card {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 24px;
-            border-radius: 16px;
-            border-left: 6px solid #fc00ff;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-        }
-
-        /* セレクトボックスのカスタマイズ（モバイルでの視認性向上） */
-        .stSelectbox > div {
-            background-color: #ffffff !important;
-            color: #1a1a2e !important;
-            border-radius: 8px !important;
-            border: 2px solid rgba(0, 219, 222, 0.5) !important;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
-        }
-        
-        /* セレクトボックスのホバー状態 */
-        .stSelectbox > div:hover {
-            border-color: rgba(0, 219, 222, 0.6) !important;
-            box-shadow: 0 0 8px rgba(0, 219, 222, 0.2) !important;
-        }
-        
-        /* セレクトボックスのフォーカス状態 */
-        .stSelectbox > div:focus-within {
-            outline: 3px solid rgba(0, 219, 222, 0.8) !important;
-            outline-offset: 2px !important;
-            border-color: #00dbde !important;
-            box-shadow: 0 0 0 4px rgba(0, 219, 222, 0.2) !important;
-        }
-        
-        .stSelectbox p {
-            color: #ffffff !important;
-            font-weight: 600 !important;
-        }
-        
-        /* マルチセレクトのスタイル */
-        .stMultiSelect > div > div {
-            background-color: #ffffff !important;
-            color: #1a1a2e !important;
-            border-radius: 8px !important;
-            border: 2px solid rgba(0, 219, 222, 0.5) !important;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
-        }
-
-        .stMultiSelect > div > div:hover,
-        .stMultiSelect > div > div:focus-within {
-            border-color: #00dbde !important;
-            box-shadow: 0 0 0 4px rgba(0, 219, 222, 0.2) !important;
-        }
-
-        /* 詳細コンテナの余白調整 */
-        .theme-detail-container {
-            background-color: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin: 0;
-        }
-
-        /* 楽曲詳細カード */
-        .song-detail-card {
-            background: rgba(255, 255, 255, 0.05);
-            border: 2px solid rgba(0, 219, 222, 0.3);
-            border-radius: 16px;
-            padding: 24px;
-            margin-top: 20px;
-            box-shadow: 0 4px 20px rgba(0, 219, 222, 0.2);
-        }
-        .song-detail-title {
-            color: #00dbde;
-            font-size: 2rem;
-            font-weight: 900;
-            margin-bottom: 10px;
-        }
-        .song-detail-subtitle {
-            color: #ffffff;
-            font-size: 1.3rem;
-            font-weight: 600;
-            margin-bottom: 20px;
-        }
-        .song-detail-info {
-            color: #e0e0e0;
-            font-size: 1rem;
-            margin: 8px 0;
-        }
-        .song-detail-label {
-            color: #00dbde;
-            font-weight: 600;
-            display: inline-block;
-            min-width: 100px;
-        }
-
-        /* =========================================
-           6. データテーブル (AgGrid)
-           ========================================= */
-        .ag-theme-streamlit {
-            border-radius: 12px !important;
-            background-color: #000000 !important;
-        }
-        .ag-row-odd { background-color: #000000 !important; }
-        .ag-row-even { background-color: #404040 !important; }
-        .ag-cell { color: #ffffff !important; }
-        .ag-header { background-color: #1a1a1a !important; }
-        .ag-header-cell-label { color: #00dbde !important; }
-        
-        /* AgGrid行のホバー状態 */
-        .ag-row:hover {
-            background-color: rgba(0, 219, 222, 0.1) !important;
-            cursor: pointer !important;
-            transition: background-color 0.15s ease !important;
-        }
-        
-        /* AgGrid行の選択状態 */
-        .ag-row-selected {
-            background-color: rgba(0, 219, 222, 0.2) !important;
-            border-left: 4px solid #00dbde !important;
-        }
-        
-        /* AgGrid行のフォーカス状態（キーボード操作時） */
-        .ag-row:focus {
-            outline: 2px solid rgba(0, 219, 222, 0.8) !important;
-            outline-offset: -2px !important;
-        }
-
-        /* =========================================
-           7. ローディング状態の視覚的改善
-           ========================================= */
-        .stSpinner > div {
-            border-color: #00dbde !important;
-            border-top-color: transparent !important;
-        }
-
-        .stSpinner > div > div {
-            background-color: rgba(0, 219, 222, 0.1) !important;
-        }
-
-        [data-testid="stSpinner"] {
-            color: #00dbde !important;
-            font-weight: 600 !important;
-        }
-
-        /* =========================================
-           8. エラーメッセージ・情報メッセージのスタイル改善
-           ========================================= */
-        /* アラートメッセージの基本スタイル（Streamlit標準のスタイルを上書き） */
-        [data-base="stAlert"],
-        .stAlert {
-            border-radius: 12px !important;
-            border-left: 4px solid rgba(0, 219, 222, 0.5) !important;
-            background-color: rgba(0, 219, 222, 0.08) !important;
-            border: 1px solid rgba(0, 219, 222, 0.2) !important;
-            padding: 1rem !important;
-        }
-
-        /* エラーメッセージ（st.error） - Streamlitのデフォルトクラスを使用 */
-        [data-base="stAlert"].alert-danger,
-        .stAlert[data-testid="stAlert"]:has(> div > div > svg[aria-label="Error"]) {
-            border-left: 4px solid #ff4444 !important;
-            background-color: rgba(255, 68, 68, 0.1) !important;
-            border: 1px solid rgba(255, 68, 68, 0.3) !important;
-        }
-
-        /* 成功メッセージ（st.success） */
-        [data-base="stAlert"].alert-success,
-        .stAlert[data-testid="stAlert"]:has(> div > div > svg[aria-label="Success"]) {
-            border-left: 4px solid #00dbde !important;
-            background-color: rgba(0, 219, 222, 0.1) !important;
-            border: 1px solid rgba(0, 219, 222, 0.3) !important;
-        }
-
-        /* 情報メッセージ（st.info） */
-        [data-base="stAlert"].alert-info,
-        .stAlert[data-testid="stAlert"]:has(> div > div > svg[aria-label="Info"]) {
-            border-left: 4px solid #00dbde !important;
-            background-color: rgba(0, 219, 222, 0.08) !important;
-            border: 1px solid rgba(0, 219, 222, 0.2) !important;
-        }
-
-        /* 警告メッセージ（st.warning） */
-        [data-base="stAlert"].alert-warning,
-        .stAlert[data-testid="stAlert"]:has(> div > div > svg[aria-label="Warning"]) {
-            border-left: 4px solid #ffaa00 !important;
-            background-color: rgba(255, 170, 0, 0.1) !important;
-            border: 1px solid rgba(255, 170, 0, 0.3) !important;
-        }
-
-        /* =========================================
-           9. スクロールバーのスタイル（快適性向上）
-           ========================================= */
-        /* カスタムスクロールバー（Webkit系ブラウザ） */
-        ::-webkit-scrollbar {
-            width: 10px;
-            height: 10px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 5px;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: rgba(0, 219, 222, 0.5);
-            border-radius: 5px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: rgba(0, 219, 222, 0.8);
-        }
-
-        /* Firefox用 */
-        * {
-            scrollbar-width: thin;
-            scrollbar-color: rgba(0, 219, 222, 0.5) rgba(0, 0, 0, 0.2);
-        }
-
-        /* =========================================
-           10. 本文テキストとリンクのコントラスト改善
-           ========================================= */
-        .stMarkdown, p {
-            color: #e0e0e0 !important; /* ダーク背景に対して読みやすく */
-        }
-
-        /* リンクのコントラスト */
-        a {
-            color: #00dbde !important;
-            text-decoration: underline !important;
-        }
-
-        a:hover {
-            color: #ffffff !important;
-            text-decoration: none !important;
-        }
-
-        /* =========================================
-           11. テキスト選択時のハイライト
-           ========================================= */
-        ::selection {
-            background-color: rgba(0, 219, 222, 0.3);
-            color: #ffffff;
-        }
-
-        ::-moz-selection {
-            background-color: rgba(0, 219, 222, 0.3);
-            color: #ffffff;
-        }
-
-        /* =========================================
-           12. モバイル対応・レスポンシブデザイン
-           ========================================= */
-        @media (max-width: 768px) {
-            .main-title {
-                font-size: 2rem !important; /* 32px - モバイルでは小さく */
-            }
-            
-            .sub-text {
-                font-size: 0.9rem !important; /* 14.4px */
-            }
-            
-            .main .block-container {
-                padding: 1rem 1.5rem !important; /* パディングを減らす */
-            }
-            
-            .song-detail-title {
-                font-size: 1.5rem !important; /* 24px */
-            }
-            
-            .song-detail-subtitle {
-                font-size: 1.1rem !important; /* 17.6px */
-            }
-            
-            .stButton > button {
-                min-height: 48px !important; /* モバイルではさらに大きく */
-                font-size: 1rem !important;
-            }
-        }
-
-        /* =========================================
-           13. ユーティリティ
-           ========================================= */
-        [data-testid="stSidebar"] { display: none !important; }
-
         .filter-tag {
-            display: inline-flex;
-            align-items: center;
-            background-color: rgba(255, 255, 255, 0.1);
-            color: #ffffff;
+            background-color: rgba(78, 201, 176, 0.1);
+            color: var(--accent-primary);
+            border: 1px solid var(--accent-primary);
+            border-radius: 0px; 
             padding: 4px 12px;
-            border-radius: 15px;
-            font-size: 0.85rem;
             margin-right: 8px;
-            margin-bottom: 8px;
-            border: 1px solid rgba(0, 219, 222, 0.3);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            display: inline-block;
         }
-        .filter-tag-label {
-            color: #00dbde;
-            font-weight: 700;
-            margin-right: 6px;
+        
+        .ag-theme-streamlit {
+            /* グリッドビューもレトロに */
+            --ag-header-background-color: var(--card-bg);
+            --ag-header-foreground-color: var(--accent-primary);
+            --ag-background-color: var(--bg-color);
+            --ag-foreground-color: var(--text-main);
+            --ag-row-hover-color: rgba(78, 201, 176, 0.1);
+            font-family: var(--font-pixel) !important;
+        }
+
+        /* スクロールバー */
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-color);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-border);
+            border: 2px solid var(--bg-color);
+            border-radius: 6px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-secondary);
         }
         </style>
     """, unsafe_allow_html=True)
+
+def render_result_count_badge(count):
+    """検索結果数を表示するHTML（レトロ調）"""
+    return f"""
+    <div style="font-family: 'DotGothic16'; color: var(--accent-secondary); margin-bottom: 1rem; font-size: 1.2rem;">
+        HIT: {count} RECORDS FOUND
+    </div>
+    """
+
+def render_dashboard(df):
+    """
+    データ全体の統計情報を表示するダッシュボード
+    """
+    total_songs = len(df)
+    total_games = df['ゲーム名'].nunique() if 'ゲーム名' in df.columns else 0
+    # ユニークな配信回数
+    try:
+        total_eps = df['DISC'].nunique() if 'DISC' in df.columns else 0
+    except:
+        total_eps = 0
+
+    st.markdown(f"""
+    <div class="dashboard-container">
+        <div class="stat-box">
+            <span class="stat-label">TOTAL SONGS</span>
+            <span class="stat-value">{total_songs}</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-label">GAMES</span>
+            <span class="stat-value">{total_games}</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-label">EPISODES</span>
+            <span class="stat-value">{total_eps}</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+def render_genre_distribution_chart(df):
+    """
+    ジャンル分布をドーナツチャートで表示
+    """
+    import plotly.graph_objects as go
+    
+    if 'ジャンル' not in df.columns:
+        return
+    
+    # ジャンル別の曲数を集計
+    genre_counts = df['ジャンル'].value_counts()
+    
+    # レトロカラーパレット
+    colors = ['#4ec9b0', '#ce9178', '#569cd6', '#c586c0', '#dcdcaa', '#9cdcfe']
+    
+    fig = go.Figure(data=[go.Pie(
+        labels=genre_counts.index,
+        values=genre_counts.values,
+        hole=0.4,  # ドーナツ型
+        marker=dict(
+            colors=colors,
+            line=dict(color='#2d3748', width=2)
+        ),
+        textfont=dict(
+            family='DotGothic16, sans-serif',
+            size=14,
+            color='#d4d4d8'
+        )
+    )])
+    
+    fig.update_layout(
+        title=dict(
+            text='GENRE DISTRIBUTION',
+            font=dict(family='DotGothic16, sans-serif', size=20, color='#4ec9b0'),
+            x=0.5,
+            xanchor='center'
+        ),
+        paper_bgcolor='#15192b',
+        plot_bgcolor='#15192b',
+        font=dict(family='DotGothic16, sans-serif', color='#d4d4d8'),
+        showlegend=True,
+        legend=dict(
+            font=dict(size=12),
+            bgcolor='rgba(0,0,0,0)',
+            bordercolor='#2d3748',
+            borderwidth=1
+        ),
+        height=400,
+        margin=dict(t=60, b=20, l=20, r=20)
+    )
+    
+    st.plotly_chart(fig, use_container_width=True, key="genre_chart")
+
+def render_top_games_chart(df, top_n=10):
+    """
+    人気ゲームTOP10を横棒グラフで表示
+    """
+    import plotly.graph_objects as go
+    
+    if 'ゲーム名' not in df.columns:
+        return
+    
+    # ゲーム別の曲数を集計してTOP N取得
+    game_counts = df['ゲーム名'].value_counts().head(top_n)
+    
+    fig = go.Figure(data=[go.Bar(
+        x=game_counts.values,
+        y=game_counts.index,
+        orientation='h',
+        marker=dict(
+            color='#ce9178',
+            line=dict(color='#2d3748', width=2)
+        ),
+        text=game_counts.values,
+        textposition='outside',
+        textfont=dict(
+            family='DotGothic16, sans-serif',
+            size=14,
+            color='#d4d4d8'
+        )
+    )])
+    
+    fig.update_layout(
+        title=dict(
+            text=f'TOP {top_n} POPULAR GAMES',
+            font=dict(family='DotGothic16, sans-serif', size=20, color='#4ec9b0'),
+            x=0.5,
+            xanchor='center'
+        ),
+        xaxis=dict(
+            title='Number of Songs',
+            titlefont=dict(family='DotGothic16, sans-serif', size=14),
+            gridcolor='#2d3748',
+            showgrid=True,
+            color='#d4d4d8'
+        ),
+        yaxis=dict(
+            titlefont=dict(family='DotGothic16, sans-serif', size=14),
+            color='#d4d4d8'
+        ),
+        paper_bgcolor='#15192b',
+        plot_bgcolor='#0b1021',
+        font=dict(family='DotGothic16, sans-serif', color='#d4d4d8'),
+        height=400,
+        margin=dict(t=60, b=60, l=200, r=40)
+    )
+    
+    st.plotly_chart(fig, use_container_width=True, key="top_games_chart")
+
+def render_episode_timeline(df):
+    """
+    配信回ごとの楽曲数推移を折れ線グラフで表示
+    """
+    import plotly.graph_objects as go
+    
+    if 'DISC' not in df.columns:
+        return
+    
+    try:
+        # DISC列を数値に変換して集計
+        df_copy = df.copy()
+        df_copy['DISC_num'] = pd.to_numeric(df_copy['DISC'], errors='coerce')
+        df_copy = df_copy.dropna(subset=['DISC_num'])
+        
+        # 配信回ごとの曲数を集計
+        episode_counts = df_copy.groupby('DISC_num').size().sort_index()
+        
+        fig = go.Figure(data=[go.Scatter(
+            x=episode_counts.index,
+            y=episode_counts.values,
+            mode='lines+markers',
+            line=dict(color='#4ec9b0', width=3),
+            marker=dict(
+                color='#ce9178',
+                size=8,
+                line=dict(color='#2d3748', width=2)
+            ),
+            fill='tozeroy',
+            fillcolor='rgba(78, 201, 176, 0.1)'
+        )])
+        
+        fig.update_layout(
+            title=dict(
+                text='SONGS PER EPISODE',
+                font=dict(family='DotGothic16, sans-serif', size=20, color='#4ec9b0'),
+                x=0.5,
+                xanchor='center'
+            ),
+            xaxis=dict(
+                title='Episode Number',
+                titlefont=dict(family='DotGothic16, sans-serif', size=14),
+                gridcolor='#2d3748',
+                showgrid=True,
+                color='#d4d4d8'
+            ),
+            yaxis=dict(
+                title='Number of Songs',
+                titlefont=dict(family='DotGothic16, sans-serif', size=14),
+                gridcolor='#2d3748',
+                showgrid=True,
+                color='#d4d4d8'
+            ),
+            paper_bgcolor='#15192b',
+            plot_bgcolor='#0b1021',
+            font=dict(family='DotGothic16, sans-serif', color='#d4d4d8'),
+            height=400,
+            margin=dict(t=60, b=60, l=60, r=40)
+        )
+        
+        st.plotly_chart(fig, use_container_width=True, key="episode_timeline_chart")
+    except Exception as e:
+        st.error(f"Timeline chart error: {e}")
+
+def render_enhanced_dashboard(df):
+    """
+    統計情報とグラフを含む拡張ダッシュボード
+    """
+    # 基本統計ボックス
+    render_dashboard(df)
+    
+    st.markdown("---")
+    
+    # グラフセクション
+    st.markdown("### 📊 DATA INSIGHTS")
+    
+    # 2カラムレイアウト
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        render_genre_distribution_chart(df)
+    
+    with col2:
+        render_top_games_chart(df, top_n=10)
+    
+    # タイムライン（フル幅）
+    render_episode_timeline(df)
+
+def render_song_cards_grid(df, key_suffix=""):
+    """
+    DataFrameを受け取り、カードグリッドレイアウトで描画する
+    （ページネーション付き）
+    """
+    if df.empty:
+        st.info("No Data Found.")
+        return
+
+    # 1ページあたりの表示数
+    ITEMS_PER_PAGE = 8  # 2x2グリッド × 2行 = 8
+    
+    # ページネーションの状態管理（key_suffixで区別）
+    page_key = f'card_page_{key_suffix}'
+    if page_key not in st.session_state:
+        st.session_state[page_key] = 0
+    
+    total_pages = math.ceil(len(df) / ITEMS_PER_PAGE)
+    
+    # ページ範囲の調整
+    if st.session_state[page_key] >= total_pages:
+        st.session_state[page_key] = 0
+
+    start_idx = st.session_state[page_key] * ITEMS_PER_PAGE
+    end_idx = start_idx + ITEMS_PER_PAGE
+    
+    current_page_df = df.iloc[start_idx:end_idx]
+
+    # グリッドコンテナ開始
+    st.markdown('<div class="song-card-grid">', unsafe_allow_html=True)
+    
+    for _, row in current_page_df.iterrows():
+        # データ取得と安全なデフォルト値
+        title = row.get('曲名', 'Unknown Title')
+        game = row.get('ゲーム名', 'Unknown Game')
+        composer = row.get('発表者', '-')
+        genre = row.get('ジャンル', '-')
+
+        card_html = f"""
+        <div class="song-card">
+            <div class="card-header">
+                <h3 class="card-song-title">{title}</h3>
+                <div class="card-game-title">{game}</div>
+            </div>
+            <div class="card-meta">
+                <span class="card-tag">{genre}</span>
+                <span style="font-size:0.75rem; opacity:0.7;">{composer}</span>
+            </div>
+        </div>
+        """
+        st.markdown(card_html, unsafe_allow_html=True)
+
+    # グリッドコンテナ終了
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # ページネーションコントロール
+    if total_pages > 1:
+        st.markdown("---")
+        c1, c2, c3 = st.columns([1, 2, 1])
+        with c1:
+            if st.session_state[page_key] > 0:
+                if st.button("◀ PREV", key=f"btn_prev_page_{key_suffix}"):
+                    st.session_state[page_key] -= 1
+                    st.rerun()
+        with c2:
+            st.markdown(f"<div style='text-align:center; padding-top:10px; font-family:var(--font-pixel);'>PAGE {st.session_state[page_key] + 1} / {total_pages}</div>", unsafe_allow_html=True)
+        with c3:
+            if st.session_state[page_key] < total_pages - 1:
+                if st.button("NEXT ▶", key=f"btn_next_page_{key_suffix}"):
+                    st.session_state[page_key] += 1
+                    st.rerun()
+
+def render_active_filters(filters, search_query):
+    """
+    現在適用されているフィルターをタグ形式で表示
+    """
+    if not any(filters.values()) and not search_query:
+        return
+    
+    html = '<div style="margin-bottom: 20px;">'
+    
+    # 検索キーワード
+    if search_query:
+        html += f'<span class="filter-tag"><span style="margin-right:5px;">🔍</span>"{search_query}"</span>'
+    
+    # 各フィルターカテゴリー
+    for category, values in filters.items():
+        if values:
+            for val in values:
+                html += f'<span class="filter-tag"><span style="margin-right:5px; opacity:0.7;">{category}:</span>{val}</span>'
+                
+    html += '</div>'
+    st.markdown(html, unsafe_allow_html=True)
 
 def on_theme_change():
     """セレクトボックスでテーマが変更された時の処理"""
@@ -524,7 +654,6 @@ def render_theme_list_page(df):
     st.markdown("---")
 
     # --- 詳細表示エリア ---
-    # ここで直接 session_state を読み取る
     current_themes = st.session_state.get('selected_themes', [])
     if not current_themes:
         st.info("表示するテーマを選択してください。")
@@ -534,8 +663,6 @@ def render_theme_list_page(df):
     st.markdown(f"### 🎵 {target_theme}")
     
     with st.container():
-        st.markdown('<div class="theme-detail-container">', unsafe_allow_html=True)
-        
         # アーカイブ動画
         render_archive_video(df, [target_theme])
         
@@ -547,11 +674,12 @@ def render_theme_list_page(df):
             '発表者': []
         }
         theme_df = apply_filters(df, theme_filters)
-        st.write(f"📊 紹介曲一覧 ({len(theme_df)}件)")
         
-        display_results(theme_df, mode="search", key=f"ag_theme_detail_{target_theme}")
+        # ダッシュボード表示（テーマ内統計）
+        st.markdown(f"**紹介曲数: {len(theme_df)}曲**")
         
-        st.markdown('</div>', unsafe_allow_html=True)
+        # テーマ詳細はカード型で見やすく
+        render_song_cards_grid(theme_df, key_suffix=f"theme_{target_theme}")
 
 def render_archive_video(df, selected_themes):
     """
@@ -608,7 +736,6 @@ def render_filter_panel(filter_options):
                 key="selected_presenters"
             )
         
-        # フィルタ適用ボタンは削除（自動反映のため）
         st.button("🔄 検索条件をクリア", key="btn_clear_filter", on_click=clear_filters, use_container_width=True)
     
     return {
@@ -621,7 +748,6 @@ def render_filter_panel(filter_options):
 def _platform_match(val, platform_filters):
     """
     プラットフォーム文字列がフィルタ条件に一致するかチェック
-    （複数プラットフォームをカンマ区切りで含む場合に対応）
     """
     if not val:
         return False
@@ -632,17 +758,8 @@ def _platform_match(val, platform_filters):
 def _apply_filters_impl(df, filters_tuple):
     """
     フィルタ適用の内部実装（キャッシュ用）
-    filtersをタプル形式に変換してキャッシュ効率を向上
-    
-    Args:
-        df: フィルタリング対象のDataFrame
-        filters_tuple: フィルタ条件のタプル (テーマ, ジャンル, プラットフォーム, 発表者)
-    
-    Returns:
-        フィルタリングされたDataFrame
     """
     try:
-        # タプルを辞書に戻す
         filters = {
             'テーマ': list(filters_tuple[0]) if filters_tuple[0] else [],
             'ジャンル': list(filters_tuple[1]) if filters_tuple[1] else [],
@@ -650,7 +767,6 @@ def _apply_filters_impl(df, filters_tuple):
             '発表者': list(filters_tuple[3]) if filters_tuple[3] else []
         }
     except (IndexError, TypeError) as e:
-        # タプルの形式が不正な場合、フィルタなしとして返す
         return df.copy()
     
     filtered_df = df.copy()
@@ -670,470 +786,73 @@ def _apply_filters_impl(df, filters_tuple):
         if filters['発表者']:
             filtered_df = filtered_df[filtered_df['発表者グループ'].isin(filters['発表者'])]
     except Exception:
-        # フィルタ適用中にエラーが発生した場合、元のDataFrameを返す
         return df.copy()
     
     return filtered_df
 
 def apply_filters(df, filters):
     """
-    データにフィルターを適用（パフォーマンス最適化: フィルタ条件が同じ場合はキャッシュを使用）
-    
-    Args:
-        df: フィルタリング対象のDataFrame
-        filters: フィルタ条件の辞書
-            - 'テーマ': 配信テーマのリスト
-            - 'ジャンル': ジャンルのリスト
-            - 'プラットフォーム': プラットフォームのリスト
-            - '発表者': 発表者のリスト
-    
-    Returns:
-        フィルタリングされたDataFrame
+    データにフィルターを適用
     """
     if df.empty:
         return df.copy()
     
-    # フィルタがすべて空の場合は、そのまま返す
     if not any(filters.values()):
         return df.copy()
     
     try:
-        # フィルタ条件をタプルに変換（キャッシュキーとして使用）
         filters_tuple = (
             tuple(sorted(filters.get('テーマ', []))),
             tuple(sorted(filters.get('ジャンル', []))),
             tuple(sorted(filters.get('プラットフォーム', []))),
             tuple(sorted(filters.get('発表者', [])))
         )
-        
-        # キャッシュされた関数を使用
         return _apply_filters_impl(df, filters_tuple)
     except Exception:
-        # エラーが発生した場合、フィルタなしとして返す
         return df.copy()
-
-def render_song_detail(selected_row, df):
-    """
-    選択された楽曲の詳細情報をカード形式で表示
-    """
-    if selected_row is None or (hasattr(selected_row, 'empty') and selected_row.empty):
-        return
-    
-    # selected_rowを辞書形式に変換
-    if hasattr(selected_row, 'to_dict'):
-        row_dict = selected_row.to_dict()
-    else:
-        row_dict = dict(selected_row) if selected_row else {}
-    
-    # 元のDataFrameから全情報を取得（表示用に非表示になっている列も含む）
-    # 選択された行の通算番号または曲名で元のDataFrameから検索
-    song_name = row_dict.get('曲名', '')
-    game_name = row_dict.get('ゲーム名', '')
-    
-    # 元のDataFrameから該当する行を取得
-    match = pd.DataFrame()
-    if '通算' in row_dict and row_dict['通算']:
-        match = df[df['通算'] == row_dict['通算']]
-    elif song_name:
-        match = df[(df['曲名'] == song_name) & (df['ゲーム名'] == game_name)]
-    
-    if not match.empty:
-        song_data = match.iloc[0].to_dict()
-    else:
-        # フォールバック: 選択された行のデータをそのまま使用
-        song_data = row_dict
-    
-    # 配信回の整形
-    try:
-        disc_val = int(float(str(song_data.get('DISC', '')).strip()))
-        ep_str = f"第{disc_val:03d}回"
-    except (ValueError, TypeError):
-        ep_str = str(song_data.get('DISC', '不明'))
-    
-    # 詳細カードの表示
-    st.markdown('<div class="song-detail-card">', unsafe_allow_html=True)
-    
-    # 曲名
-    st.markdown(f'<div class="song-detail-title">{song_data.get("曲名", "曲名不明")}</div>', unsafe_allow_html=True)
-    
-    # ゲーム名
-    st.markdown(f'<div class="song-detail-subtitle">出典: {song_data.get("ゲーム名", "ゲーム名不明")}</div>', unsafe_allow_html=True)
-    
-    # 基本情報
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown(f'<div class="song-detail-info"><span class="song-detail-label">通算番号:</span> {song_data.get("通算", "不明")}</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="song-detail-info"><span class="song-detail-label">配信回:</span> {ep_str}</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="song-detail-info"><span class="song-detail-label">テーマ:</span> {song_data.get("テーマ", "不明")}</div>', unsafe_allow_html=True)
-    with col2:
-        st.markdown(f'<div class="song-detail-info"><span class="song-detail-label">ジャンル:</span> {song_data.get("ジャンル", "不明")}</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="song-detail-info"><span class="song-detail-label">プラットフォーム:</span> {song_data.get("プラットフォーム", "不明")}</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="song-detail-info"><span class="song-detail-label">発表者:</span> {song_data.get("発表者", "不明")}</div>', unsafe_allow_html=True)
-    
-    # アーカイブ動画リンク
-    archive_url = song_data.get('アーカイブURL', '') or song_data.get('Archive_URL', '')
-    if archive_url and str(archive_url).startswith('http'):
-        st.markdown("---")
-        st.markdown("### 📺 アーカイブ動画")
-        st.video(archive_url)
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-
-def display_results(df, mode="search", key=None):
-    """
-    検索結果を st-aggrid で表示し、選択された行の詳細情報を表示
-    （パフォーマンス最適化: カラム構成が同じ場合はGridOptionsBuilderの設定をキャッシュ）
-    """
-    if df.empty:
-        st.info("該当する楽曲が見つかりませんでした。")
-        st.markdown("""
-            <div style="background-color: rgba(0, 219, 222, 0.1); border: 1px solid rgba(0, 219, 222, 0.3); border-radius: 12px; padding: 1.5rem; margin-top: 1rem;">
-                <p style="color: #e0e0e0; margin-bottom: 1rem;">💡 検索条件を変更してみてください：</p>
-                <ul style="color: #b0b0b0; margin-left: 1.5rem;">
-                    <li>キーワードを変更する</li>
-                    <li>フィルタ条件を緩和する</li>
-                    <li>検索条件をクリアして最初からやり直す</li>
-                </ul>
-            </div>
-        """, unsafe_allow_html=True)
-        return
-
-    if mode == "all":
-        display_order = ['通算', 'DISC', 'テーマ', '曲名', 'ゲーム名', '発表者', 'ジャンル', 'プラットフォーム']
-    else:
-        display_order = ['曲名', 'ゲーム名', 'DISC', 'テーマ', '発表者', '通算']
-
-    cols_to_use = [c for c in display_order if c in df.columns]
-    other_cols = [c for c in df.columns if c not in cols_to_use]
-    df_display = df[cols_to_use + other_cols]
-
-    # カラム構成のキャッシュキーを生成
-    cols_tuple = tuple(sorted(df_display.columns))
-    cache_key = f"grid_options_{mode}_{cols_tuple}"
-    
-    # セッション状態でGridOptionsBuilderの設定をキャッシュ
-    if cache_key not in st.session_state:
-        gb = GridOptionsBuilder.from_dataframe(df_display)
-        gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=50)
-        gb.configure_side_bar()
-        gb.configure_selection('single')
-        
-        if '通算' in df_display.columns:
-            gb.configure_column("通算", sort="desc")
-
-        hidden_cols = ['発表者グループ', '表示用テーマ', 'ジャンルID', 'アーカイブURL', 'Archive_URL'] + other_cols
-        
-        for col in df_display.columns:
-            if col in hidden_cols:
-                gb.configure_column(col, hide=True)
-            else:
-                if col == '曲名':
-                    gb.configure_column(col, pinned='left', width=200)
-                elif col == 'ゲーム名':
-                    gb.configure_column(col, width=200)
-                elif col == '通算':
-                    gb.configure_column(col, headerName="通算No.", width=80)
-                elif col == 'DISC':
-                    gb.configure_column(col, headerName="配信回", width=80)
-                elif col == 'テーマ':
-                    gb.configure_column(col, width=200)
-                elif col == '発表者':
-                    gb.configure_column(col, width=120)
-
-        st.session_state[cache_key] = gb.build()
-    
-    grid_options = st.session_state[cache_key]
-
-    # AgGridの戻り値から選択された行を取得
-    grid_response = AgGrid(
-        df_display,
-        gridOptions=grid_options,
-        columns_auto_size_mode=ColumnsAutoSizeMode.FIT_CONTENTS,
-        allow_unsafe_jscode=True, 
-        theme='streamlit',
-        key=key,
-        update_mode='SELECTION_CHANGED',
-        return_mode=DataReturnMode.FILTERED
-    )
-    
-    # 選択された行がある場合、詳細情報を表示
-    selected_rows = grid_response.get('selected_rows', [])
-    # selected_rowsがリストかDataFrameかをチェック
-    if isinstance(selected_rows, pd.DataFrame):
-        if not selected_rows.empty:
-            render_song_detail(selected_rows.iloc[0], df)
-    elif isinstance(selected_rows, list) and len(selected_rows) > 0:
-        selected_df = pd.DataFrame(selected_rows)
-        if not selected_df.empty:
-            render_song_detail(selected_df.iloc[0], df)
-
-def render_result_count_badge(result_count):
-    """
-    検索結果件数をバッジ形式で表示（色分け対応）
-    
-    Args:
-        result_count: 検索結果の件数
-    
-    Returns:
-        HTML文字列（st.markdownで使用可能）
-    """
-    if result_count == 0:
-        badge_color = "#808080"  # グレー
-        badge_text = "0件"
-    elif result_count <= 10:
-        badge_color = "#ff8800"  # オレンジ
-        badge_text = f"{result_count}件"
-    else:
-        badge_color = "#00dbde"  # シアン（緑系）
-        badge_text = f"{result_count}件"
-    
-    return f"""
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 0.5rem;">
-            <h2 style="margin: 0; color: #00dbde; font-size: 2rem;">🔍 検索結果</h2>
-            <span style="background-color: {badge_color}; color: #ffffff; padding: 6px 16px; border-radius: 20px; font-weight: 700; font-size: 1.1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
-                {badge_text}
-            </span>
-        </div>
-    """
-
-def render_active_filters(filters, search_query=""):
-    """
-    現在適用されている検索条件をタグ形式で表示する
-    """
-    tags_html = '<div style="display: flex; flex-wrap: wrap; margin-bottom: 1.5rem;">'
-    has_any_filter = False
-
-    # キーワード検索
-    if search_query and search_query.strip():
-        tags_html += f'<div class="filter-tag"><span class="filter-tag-label">キーワード:</span> {search_query}</div>'
-        has_any_filter = True
-
-    # フィルタ条件
-    filter_labels = {
-        'テーマ': 'テーマ',
-        'ジャンル': 'ジャンル',
-        'プラットフォーム': 'ハード',
-        '発表者': '発表者'
-    }
-
-    for key, label in filter_labels.items():
-        selected_items = filters.get(key, [])
-        if selected_items:
-            has_any_filter = True
-            for item in selected_items:
-                tags_html += f'<div class="filter-tag"><span class="filter-tag-label">{label}:</span> {item}</div>'
-    
-    tags_html += '</div>'
-
-    if has_any_filter:
-        st.markdown(tags_html, unsafe_allow_html=True)
 
 def render_entrance_screen(latest_theme):
     """
-    初期表示のエントランス画面を描画（簡略化版）
+    初期表示画面（ダッシュボード含む）
     """
-    st.markdown(f"""
-        <div style="text-align: center; padding: 40px 20px;">
-            <div style="font-size: 5rem; margin-bottom: 10px;">🎧</div>
-            <h2 style="color: #00dbde; font-weight: 700;">語る会Libraryへようこそ</h2>
-            <p style="color: #b0b0b0; font-size: 1.1rem; max-width: 600px; margin: 0 auto 20px auto;">
-                🔍 キーワード検索 または 📋 詳細条件で絞り込んで、<br>
-                思い出の曲を見つけましょう。
-            </p>
-        </div>
-    """, unsafe_allow_html=True)
+    st.markdown("<div style='text-align:center; margin: 4rem 0;'>", unsafe_allow_html=True)
+    st.markdown("<h3>Welcome to the Library</h3>", unsafe_allow_html=True)
+    st.markdown("<p style='opacity:0.6; font-family:var(--font-pixel);'>SELECT A KEYWORD OR THEME TO START</p>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
-def render_random_card(song, df_candidates, key_suffix=""):
+def render_random_card(row, df, key_suffix=""):
     """
-    ランダム表示された曲をカード形式で描画（ルーレット演出対応）
-    
-    Args:
-        song: 表示する楽曲データ（Series）
-        df_candidates: ルーレット演出用の候補楽曲リスト（DataFrame）
-        key_suffix: キー識別用のサフィックス
+    ランダム表示カード（互換性のため残存、CSS変更に伴いスタイル調整）
     """
-    try:
-        ep_val = int(float(str(song['DISC']).strip()))
-        ep_str = f"第{ep_val:03d}回"
-    except (ValueError, TypeError, KeyError):
-        ep_str = "配信回不明"
+    pass 
 
-    # ルーレット演出用の候補データをJSON形式で準備（最大30曲）
-    candidates = []
-    if not df_candidates.empty:
-        sample_df = df_candidates.sample(min(30, len(df_candidates)))
-        for _, row in sample_df.iterrows():
-            try:
-                cand_ep = int(float(str(row['DISC']).strip()))
-                cand_ep_str = f"第{cand_ep:03d}回"
-            except (ValueError, TypeError, KeyError):
-                cand_ep_str = "配信回不明"
-            
-            candidates.append({
-                'song': str(row.get('曲名', '')),
-                'game': str(row.get('ゲーム名', '')),
-                'ep': cand_ep_str,
-                'theme': str(row.get('テーマ', 'なし')),
-                'number': str(row.get('通算', '???'))
-            })
-    
-    # 次の楽曲データも事前に準備（候補からランダムに選択）
-    next_song_data = None
-    if candidates:
-        next_song_data = random.choice(candidates)
+def display_results(df, mode="search", key=None):
+    """
+    検索結果を表示（カードビューとグリッドビューの切り替えに対応）
+    """
+    if df.empty:
+        st.info("該当する楽曲が見つかりませんでした。")
+        return
+
+    # ビュー切り替えラジオボタン
+    view_mode = st.radio("View Mode:", ["Card", "Grid"], horizontal=True, key=f"view_mode_{key}", label_visibility="collapsed")
+
+    if view_mode == "Card":
+        render_song_cards_grid(df, key_suffix=key if key else "default")
     else:
-        next_song_data = {
-            'song': str(song.get('曲名', '')),
-            'game': str(song.get('ゲーム名', '')),
-            'ep': ep_str,
-            'theme': str(song.get('テーマ', 'なし')),
-            'number': str(song.get('通算', '???'))
-        }
+        # 既存のAgGrid表示（レトロスタイル適用済み）
+        gb = GridOptionsBuilder.from_dataframe(df[['曲名', 'ゲーム名', 'ジャンル', 'プラットフォーム', '発表者', 'テーマ']])
+        gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=20)
+        gb.configure_selection('single', use_checkbox=False)
+        gb.configure_default_column(resizable=True, filterable=True, sortable=True)
+        gridOptions = gb.build()
 
-    # 現在の楽曲データもJSON形式で
-    current_data = {
-        'song': str(song.get('曲名', '')),
-        'game': str(song.get('ゲーム名', '')),
-        'ep': ep_str,
-        'theme': str(song.get('テーマ', 'なし')),
-        'number': str(song.get('通算', '???'))
-    }
+        AgGrid(
+            df,
+            gridOptions=gridOptions,
+            fit_columns_on_grid_load=True,
+            height=600,
+            theme='streamlit', # CSSで上書きしている
+            key=f"grid_{key}"
+        )
 
-    # ルーレット演出用のJavaScriptを含むHTML
-    candidates_json = json.dumps(candidates, ensure_ascii=False)
-    current_json = json.dumps(current_data, ensure_ascii=False)
-    next_json = json.dumps(next_song_data, ensure_ascii=False)
-    
-    # シャッフルフラグをセッション状態で管理
-    shuffle_flag_key = f'shuffle_trigger_{key_suffix}'
-    if shuffle_flag_key not in st.session_state:
-        st.session_state[shuffle_flag_key] = 0
-    
-    # シャッフルトリガーのカウンターをチェック
-    should_start_roulette = st.session_state.get(shuffle_flag_key, 0) > 0
-    if should_start_roulette:
-        st.session_state[shuffle_flag_key] = 0  # リセット
-    
-    st.markdown(f"""
-        <div class="random-card" id="random-card-{key_suffix}">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
-                <span style="color: #fc00ff; font-weight: bold; font-size: 0.9rem;">✨ ランダム表示</span>
-                <span style="color: #00dbde; font-size: 0.8rem; background: rgba(0,219,222,0.1); padding: 2px 10px; border-radius: 10px;" id="random-number-{key_suffix}">No.{song.get('通算', '???')}</span>
-            </div>
-            <h3 style="margin: 5px 0 10px 0; font-size: 1.8rem; line-height: 1.2; color: #ffffff;" id="random-song-{key_suffix}">{song['曲名']}</h3>
-            <p style="margin: 0; color: #e0e0e0; font-size: 1.1rem; font-weight: 500;" id="random-game-{key_suffix}">出典: {song['ゲーム名']}</p>
-            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; gap: 20px; margin-bottom: 20px;">
-                <div>
-                    <p style="margin: 0; color: #b0b0b0; font-size: 0.8rem;">放送回</p>
-                    <p style="margin: 0; color: #ffffff; font-weight: bold;" id="random-ep-{key_suffix}">{ep_str}</p>
-                </div>
-                <div>
-                    <p style="margin: 0; color: #b0b0b0; font-size: 0.8rem;">テーマ</p>
-                    <p style="margin: 0; color: #ffffff; font-weight: bold;" id="random-theme-{key_suffix}">{song.get('テーマ', 'なし')}</p>
-                </div>
-            </div>
-        </div>
-        
-        <script>
-        (function() {{
-            const candidates = {candidates_json};
-            const currentData = {current_json};
-            const nextData = {next_json};
-            const keySuffix = '{key_suffix}';
-            let isRouletteRunning = false;
-            
-            // ルーレット演出関数
-            function startRoulette(finalData) {{
-                if (isRouletteRunning) return; // 既に実行中の場合はスキップ
-                isRouletteRunning = true;
-                
-                const songEl = document.getElementById('random-song-' + keySuffix);
-                const gameEl = document.getElementById('random-game-' + keySuffix);
-                const epEl = document.getElementById('random-ep-' + keySuffix);
-                const themeEl = document.getElementById('random-theme-' + keySuffix);
-                const numberEl = document.getElementById('random-number-' + keySuffix);
-                
-                if (!songEl || !gameEl || !epEl || !themeEl || !numberEl) {{
-                    isRouletteRunning = false;
-                    return;
-                }}
-                
-                const duration = 500; // 0.5秒
-                const interval = 25; // 25msごとに切り替え（約20回/0.5秒で高速切り替え）
-                let elapsed = 0;
-                
-                const rouletteInterval = setInterval(() => {{
-                    elapsed += interval;
-                    
-                    // 候補からランダムに選んで表示（高速に切り替え）
-                    if (candidates.length > 0) {{
-                        const randomIndex = Math.floor(Math.random() * candidates.length);
-                        const candidate = candidates[randomIndex];
-                        
-                        songEl.textContent = candidate.song;
-                        gameEl.textContent = '出典: ' + candidate.game;
-                        epEl.textContent = candidate.ep;
-                        themeEl.textContent = candidate.theme;
-                        numberEl.textContent = 'No.' + candidate.number;
-                    }}
-                    
-                    // 0.3秒経過したら最終データを表示して停止
-                    if (elapsed >= duration) {{
-                        clearInterval(rouletteInterval);
-                        songEl.textContent = finalData.song;
-                        gameEl.textContent = '出典: ' + finalData.game;
-                        epEl.textContent = finalData.ep;
-                        themeEl.textContent = finalData.theme;
-                        numberEl.textContent = 'No.' + finalData.number;
-                        isRouletteRunning = false;
-                    }}
-                }}, interval);
-            }}
-            
-            // ボタンクリックイベントをリッスン
-            function setupButtonListener() {{
-                const checkButton = setInterval(() => {{
-                    const buttons = document.querySelectorAll('button');
-                    buttons.forEach(btn => {{
-                        if (btn.textContent.includes('🎲 ランダムシャッフル') && !btn.dataset.rouletteSetup) {{
-                            btn.dataset.rouletteSetup = 'true';
-                            btn.addEventListener('click', function(e) {{
-                                // ルーレット演出を開始
-                                startRoulette(nextData);
-                            }}, {{ once: true }});
-                        }}
-                    }});
-                }}, 100);
-                
-                setTimeout(() => clearInterval(checkButton), 3000);
-            }}
-            
-            // ページロード時にセットアップ
-            if (document.readyState === 'loading') {{
-                document.addEventListener('DOMContentLoaded', setupButtonListener);
-            }} else {{
-                setupButtonListener();
-            }}
-            
-            // シャッフルトリガーが設定されている場合は即座にルーレットを開始
-            const shouldStart = {1 if should_start_roulette else 0};
-            if (shouldStart === 1) {{
-                setTimeout(() => {{
-                    startRoulette(nextData);
-                }}, 100); // DOM更新を待つ
-            }}
-        }})();
-        </script>
-    """, unsafe_allow_html=True)
-
-    col1, col2 = st.columns([7, 3])
-    with col2:
-        st.markdown('<div style="margin-top: -45px;"></div>', unsafe_allow_html=True)
-        shuffle_clicked = st.button("🎲 ランダムシャッフル", key=f"next_random_{key_suffix}", use_container_width=True)
-        if shuffle_clicked:
-            # ボタンがクリックされたら、シャッフルフラグを立てて新しい楽曲を選択
-            st.session_state[shuffle_flag_key] = 1
-            return True
-    
-    st.markdown('<div style="margin-bottom: 40px;"></div>', unsafe_allow_html=True)
-    return False

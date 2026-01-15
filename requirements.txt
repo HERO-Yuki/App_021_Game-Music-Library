@@ -8,3 +8,4 @@ streamlit-aggrid
 pyyaml
 python-dotenv
 protobuf>=5.0.0,<6.0.0
+plotly>=5.0.0
