@@ -214,11 +214,14 @@ def get_filter_options(df):
             parts = [p.strip() for p in p_str.replace('，', ',').replace('/', ',').split(',')]
             platforms.update(parts)
 
+    # 発表者は固定の5択（指定された順序）
+    presenter_options = ['視聴者', '夕樹陽彩', '焔幽気', '松足楽瞬', 'ゲスト']
+    
     options = {
         'テーマ': themes,
         'ジャンル': genre_list,
         'プラットフォーム': sorted(list(platforms)),
-        '発表者': sorted(df['発表者グループ'].unique().tolist()) if '発表者グループ' in df.columns else []
+        '発表者': presenter_options
     }
     # 空文字を除去
     for key in options:

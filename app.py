@@ -34,6 +34,7 @@ def main():
 
     st.markdown('<h1 class="main-title">語る会LIBRARY</h1>', unsafe_allow_html=True)
     st.markdown('<p class="sub-text">〜 LEGENDARY GAME MUSIC ARCHIVES 〜</p>', unsafe_allow_html=True)
+    st.markdown('<div class="sub-text-border"></div>', unsafe_allow_html=True)
 
     # データの読み込み
     if 'data_load_retry' not in st.session_state:
@@ -62,18 +63,18 @@ def main():
         else:
             st.session_state['selected_themes'] = []
 
-    # タブの作成（STATSタブを追加）
-    tab_search, tab_themes, tab_all, tab_stats = st.tabs(["🔍 SEARCH", "📺 EPISODES", "📚 ALL RECORDS", "📊 STATS"])
+    # タブの作成（日本語表記）
+    tab_search, tab_themes, tab_all, tab_stats = st.tabs(["🔍 楽曲検索", "📺 配信一覧", "📚 全曲リスト", "📊 統計"])
 
     with tab_search:
         # キーワード検索の入力
         col_search1, col_search2 = st.columns([8, 2])
         with col_search1:
             # リアルタイム検索っぽく見せるため、formを使わず直書き
-            search_query = st.text_input("KEYWORD SEARCH", placeholder="Input Title, Game, or Series...", key="main_search", label_visibility="collapsed")
+            search_query = st.text_input("キーワード検索", placeholder="曲名、ゲーム名、シリーズ名など...", key="main_search", label_visibility="collapsed")
         with col_search2:
             # 検索ボタンは念のため残すが、入力だけで動作する
-            search_clicked = st.button("GO", key="btn_search_keyword", use_container_width=True)
+            search_clicked = st.button("検索", key="btn_search_keyword", use_container_width=True)
 
         # 詳細検索パネル
         filters = render_filter_panel(filter_options)

@@ -2,8 +2,9 @@ import streamlit as st
 import pandas as pd
 import time
 import json
-import random
+import streamlit as st
 import math
+import pandas as pd
 from st_aggrid import AgGrid, GridOptionsBuilder, ColumnsAutoSizeMode, DataReturnMode
 
 def load_custom_css():
@@ -13,7 +14,7 @@ def load_custom_css():
     st.markdown("""
         <style>
         @import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap');
 
         /* =========================================
@@ -28,7 +29,7 @@ def load_custom_css():
             --accent-secondary: #ce9178; /* レトロオレンジ (Warm) */
             --accent-border: #2d3748;  /* 枠線色 */
             --font-pixel: 'DotGothic16', sans-serif;
-            --font-game: 'Press Start 2P', cursive;
+            --font-game: 'Orbitron', sans-serif;
             --font-base: 'Inter', sans-serif;
         }
 
@@ -58,25 +59,31 @@ def load_custom_css():
            ========================================= */
         .main-title {
             font-family: var(--font-game) !important;
-            font-size: 2.5rem !important;
+            font-size: 2.8rem !important;
+            font-weight: 900 !important;
             color: var(--accent-primary);
-            text-shadow: 4px 4px 0px var(--accent-border);
+            text-shadow: 3px 3px 0px var(--accent-border), 0 0 20px rgba(78, 201, 176, 0.3);
             text-align: center;
             margin-bottom: 0.5rem;
-            line-height: 1.4;
-            letter-spacing: 0.1em;
+            line-height: 1.3;
+            letter-spacing: 0.05em;
         }
         .sub-text {
             text-align: center;
-            color: var(--text-sub) !important;
+            color: rgba(255, 255, 255, 0.7) !important;
             font-family: var(--font-base);
             font-size: 0.9rem !important;
-            margin-bottom: 2rem;
-            border-bottom: 2px dashed var(--accent-border);
-            padding-bottom: 1.5rem;
-            width: fit-content;
+            margin-bottom: 1rem;
+            padding-bottom: 0;
             margin-left: auto;
             margin-right: auto;
+        }
+        .sub-text-border {
+            width: 60%;
+            max-width: 600px;
+            height: 2px;
+            background: linear-gradient(to right, transparent, var(--accent-border) 20%, var(--accent-border) 80%, transparent);
+            margin: 0 auto 2rem auto;
         }
 
         /* 見出しの共通化 */
@@ -121,20 +128,41 @@ def load_custom_css():
             color: var(--accent-secondary);
         }
 
+        /* タブのスタイル */
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 8px;
+        }
+        .stTabs [data-baseweb="tab"] {
+            font-family: var(--font-pixel) !important;
+            color: rgba(255, 255, 255, 0.75) !important;
+            border-radius: 4px 4px 0 0;
+            padding: 0.5rem 1rem;
+            background-color: transparent;
+        }
+        .stTabs [aria-selected="true"] {
+            background-color: var(--card-bg) !important;
+            color: var(--accent-primary) !important;
+            border-bottom: 3px solid var(--accent-primary) !important;
+        }
+
         /* =========================================
            4. コンポーネント (入力、ボタン)
            ========================================= */
         .stTextInput > div > div > input {
             background-color: var(--card-bg) !important;
             color: var(--text-main) !important;
-            border: 2px solid var(--accent-border) !important;
+            border: 2px solid var(--accent-primary) !important;
             border-radius: 4px !important;
             font-family: var(--font-pixel) !important;
             font-size: 1.1rem;
         }
+        .stTextInput > div > div > input::placeholder {
+            color: rgba(255, 255, 255, 0.5) !important;
+            opacity: 1 !important;
+        }
         .stTextInput > div > div > input:focus {
             border-color: var(--accent-primary) !important;
-            box-shadow: 0 0 0 2px rgba(78, 201, 176, 0.2) !important;
+            box-shadow: 0 0 0 2px rgba(78, 201, 176, 0.3) !important;
         }
 
         .stButton > button {
@@ -152,11 +180,41 @@ def load_custom_css():
             background-color: var(--accent-primary) !important;
         }
 
+        /* マルチセレクトのスタイル */
+        .stMultiSelect label {
+            color: #ffffff !important;
+            font-weight: 600 !important;
+        }
+        .stMultiSelect > div > div {
+            background-color: var(--card-bg) !important;
+            border-radius: 4px !important;
+            border: 2px solid var(--accent-primary) !important;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+        }
+        .stMultiSelect > div > div:hover,
+        .stMultiSelect > div > div:focus-within {
+            border-color: var(--accent-secondary) !important;
+            box-shadow: 0 0 0 3px rgba(206, 145, 120, 0.2) !important;
+        }
+        .stMultiSelect [data-baseweb="tag"] {
+            background-color: var(--accent-primary) !important;
+            color: #000000 !important;
+        }
         /* セレクトボックス */
-        .stSelectbox > div > button {
+        .stSelectbox > div > div {
              background-color: var(--card-bg) !important;
-             color: var(--text-main) !important;
-             border: 2px solid var(--accent-border) !important;
+             border: 2px solid var(--accent-primary) !important;
+             border-radius: 4px !important;
+        }
+        .stSelectbox label {
+            color: #ffffff !important;
+            font-weight: 600 !important;
+        }
+        .stSelectbox [data-baseweb="select"] {
+            color: rgba(255, 255, 255, 0.9) !important;
+        }
+        .stSelectbox [data-baseweb="select"] > div {
+            color: rgba(255, 255, 255, 0.9) !important;
         }
 
         /* =========================================
@@ -246,15 +304,27 @@ def load_custom_css():
             margin-right: 8px;
             display: inline-block;
         }
-        
+        /* AgGrid のカスタマイズ（レトロ調） */
         .ag-theme-streamlit {
-            /* グリッドビューもレトロに */
-            --ag-header-background-color: var(--card-bg);
-            --ag-header-foreground-color: var(--accent-primary);
-            --ag-background-color: var(--bg-color);
-            --ag-foreground-color: var(--text-main);
-            --ag-row-hover-color: rgba(78, 201, 176, 0.1);
+            --ag-background-color: var(--card-bg) !important;
+            --ag-header-background-color: #1a1f35 !important;
+            --ag-odd-row-background-color: #1a1f35 !important;
+            --ag-row-hover-color: rgba(78, 201, 176, 0.1) !important;
+            --ag-border-color: var(--accent-border) !important;
+            --ag-header-foreground-color: var(--accent-primary) !important;
+            --ag-foreground-color: var(--text-main) !important;
+            font-family: var(--font-base) !important;
+        }
+        .ag-header-cell-text {
             font-family: var(--font-pixel) !important;
+            font-weight: 600 !important;
+        }
+        /* モバイル対応：列幅の最適化 */
+        @media (max-width: 768px) {
+            .ag-theme-streamlit .ag-header-cell,
+            .ag-theme-streamlit .ag-cell {
+                min-width: 80px !important;
+            }
         }
 
         /* スクロールバー */
@@ -279,7 +349,7 @@ def render_result_count_badge(count):
     """検索結果数を表示するHTML（レトロ調）"""
     return f"""
     <div style="font-family: 'DotGothic16'; color: var(--accent-secondary); margin-bottom: 1rem; font-size: 1.2rem;">
-        HIT: {count} RECORDS FOUND
+        検索結果: {count} 件
     </div>
     """
 
@@ -298,15 +368,15 @@ def render_dashboard(df):
     st.markdown(f"""
     <div class="dashboard-container">
         <div class="stat-box">
-            <span class="stat-label">TOTAL SONGS</span>
+            <span class="stat-label">総楽曲数</span>
             <span class="stat-value">{total_songs}</span>
         </div>
         <div class="stat-box">
-            <span class="stat-label">GAMES</span>
+            <span class="stat-label">ゲーム数</span>
             <span class="stat-value">{total_games}</span>
         </div>
         <div class="stat-box">
-            <span class="stat-label">EPISODES</span>
+            <span class="stat-label">配信回数</span>
             <span class="stat-value">{total_eps}</span>
         </div>
     </div>
@@ -318,11 +388,14 @@ def render_genre_distribution_chart(df):
     """
     import plotly.graph_objects as go
     
-    if 'ジャンル' not in df.columns:
+    if 'ジャンル' not in df.columns or df.empty:
         return
     
-    # ジャンル別の曲数を集計
-    genre_counts = df['ジャンル'].value_counts()
+    # ジャンル別の曲数を集計（空文字を除外）
+    genre_counts = df[df['ジャンル'] != '']['ジャンル'].value_counts()
+    
+    if genre_counts.empty:
+        return
     
     # レトロカラーパレット
     colors = ['#4ec9b0', '#ce9178', '#569cd6', '#c586c0', '#dcdcaa', '#9cdcfe']
@@ -344,7 +417,7 @@ def render_genre_distribution_chart(df):
     
     fig.update_layout(
         title=dict(
-            text='GENRE DISTRIBUTION',
+            text='ジャンル分布',
             font=dict(family='DotGothic16, sans-serif', size=20, color='#4ec9b0'),
             x=0.5,
             xanchor='center'
@@ -367,59 +440,131 @@ def render_genre_distribution_chart(df):
 
 def render_top_games_chart(df, top_n=10):
     """
-    人気ゲームTOP10を横棒グラフで表示
+    人気ゲームTOP10を横長カードで表示
+    上位3位: 1列フル幅、4位以下: 2列表示
     """
-    import plotly.graph_objects as go
-    
-    if 'ゲーム名' not in df.columns:
+    if 'ゲーム名' not in df.columns or df.empty:
         return
     
-    # ゲーム別の曲数を集計してTOP N取得
-    game_counts = df['ゲーム名'].value_counts().head(top_n)
+    # ゲーム別の曲数を集計してTOP N取得（空文字を除外）
+    game_counts = df[df['ゲーム名'] != '']['ゲーム名'].value_counts().head(top_n)
     
-    fig = go.Figure(data=[go.Bar(
-        x=game_counts.values,
-        y=game_counts.index,
-        orientation='h',
-        marker=dict(
-            color='#ce9178',
-            line=dict(color='#2d3748', width=2)
-        ),
-        text=game_counts.values,
-        textposition='outside',
-        textfont=dict(
-            family='DotGothic16, sans-serif',
-            size=14,
-            color='#d4d4d8'
-        )
-    )])
+    if game_counts.empty:
+        return
     
-    fig.update_layout(
-        title=dict(
-            text=f'TOP {top_n} POPULAR GAMES',
-            font=dict(family='DotGothic16, sans-serif', size=20, color='#4ec9b0'),
-            x=0.5,
-            xanchor='center'
-        ),
-        xaxis=dict(
-            title='Number of Songs',
-            titlefont=dict(family='DotGothic16, sans-serif', size=14),
-            gridcolor='#2d3748',
-            showgrid=True,
-            color='#d4d4d8'
-        ),
-        yaxis=dict(
-            titlefont=dict(family='DotGothic16, sans-serif', size=14),
-            color='#d4d4d8'
-        ),
-        paper_bgcolor='#15192b',
-        plot_bgcolor='#0b1021',
-        font=dict(family='DotGothic16, sans-serif', color='#d4d4d8'),
-        height=400,
-        margin=dict(t=60, b=60, l=200, r=40)
-    )
+    st.markdown("#### 人気ゲーム TOP 10")
     
-    st.plotly_chart(fig, use_container_width=True, key="top_games_chart")
+    # 上位3位を1列で表示
+    for rank, (game_name, count) in enumerate(list(game_counts.items())[:3], 1):
+        # ランクに応じた色
+        if rank == 1:
+            rank_color = "#FFD700"  # ゴールド
+            rank_icon = "🥇"
+        elif rank == 2:
+            rank_color = "#C0C0C0"  # シルバー
+            rank_icon = "🥈"
+        elif rank == 3:
+            rank_color = "#CD7F32"  # ブロンズ
+            rank_icon = "🥉"
+        
+        card_html = f"""
+        <div style="
+            background: linear-gradient(135deg, var(--card-bg) 0%, #1a1f35 100%);
+            border: 2px solid var(--accent-border);
+            border-left: 4px solid {rank_color};
+            border-radius: 6px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 0.8rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+        " onmouseover="this.style.borderColor='var(--accent-primary)'; this.style.transform='translateX(5px)';" 
+           onmouseout="this.style.borderColor='var(--accent-border)'; this.style.transform='translateX(0)';">
+            <div style="display: flex; align-items: center; gap: 1rem; flex: 1;">
+                <div style="
+                    font-family: var(--font-pixel);
+                    font-size: 1.5rem;
+                    color: {rank_color};
+                    min-width: 40px;
+                    text-align: center;
+                ">{rank_icon}</div>
+                <div style="
+                    font-family: var(--font-base);
+                    font-size: 1.1rem;
+                    color: var(--text-main);
+                    font-weight: 600;
+                ">{game_name}</div>
+            </div>
+            <div style="
+                font-family: var(--font-pixel);
+                font-size: 1.2rem;
+                color: var(--accent-primary);
+                background: rgba(78, 201, 176, 0.1);
+                padding: 0.5rem 1rem;
+                border-radius: 4px;
+                min-width: 80px;
+                text-align: center;
+            ">{count} 曲</div>
+        </div>
+        """
+        st.markdown(card_html, unsafe_allow_html=True)
+    
+    # 4位以下を2列で表示
+    remaining_games = list(game_counts.items())[3:]
+    if remaining_games:
+        # 2列に分割
+        for i in range(0, len(remaining_games), 2):
+            cols = st.columns(2)
+            for col_idx, (game_name, count) in enumerate(remaining_games[i:i+2]):
+                rank = i + col_idx + 4
+                rank_color = "#ce9178"  # レトロオレンジ
+                rank_icon = f"{rank}"
+                
+                with cols[col_idx]:
+                    card_html = f"""
+                    <div style="
+                        background: linear-gradient(135deg, var(--card-bg) 0%, #1a1f35 100%);
+                        border: 2px solid var(--accent-border);
+                        border-left: 4px solid {rank_color};
+                        border-radius: 6px;
+                        padding: 0.8rem 1rem;
+                        margin-bottom: 0.8rem;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        transition: all 0.2s ease;
+                        height: 100%;
+                    " onmouseover="this.style.borderColor='var(--accent-primary)'; this.style.transform='translateX(5px)';" 
+                       onmouseout="this.style.borderColor='var(--accent-border)'; this.style.transform='translateX(0)';">
+                        <div style="display: flex; align-items: center; gap: 0.8rem; flex: 1;">
+                            <div style="
+                                font-family: var(--font-pixel);
+                                font-size: 1.2rem;
+                                color: {rank_color};
+                                min-width: 30px;
+                                text-align: center;
+                            ">{rank_icon}</div>
+                            <div style="
+                                font-family: var(--font-base);
+                                font-size: 0.95rem;
+                                color: var(--text-main);
+                                font-weight: 600;
+                            ">{game_name}</div>
+                        </div>
+                        <div style="
+                            font-family: var(--font-pixel);
+                            font-size: 1rem;
+                            color: var(--accent-primary);
+                            background: rgba(78, 201, 176, 0.1);
+                            padding: 0.4rem 0.8rem;
+                            border-radius: 4px;
+                            min-width: 60px;
+                            text-align: center;
+                        ">{count} 曲</div>
+                    </div>
+                    """
+                    st.markdown(card_html, unsafe_allow_html=True)
 
 def render_episode_timeline(df):
     """
@@ -455,20 +600,20 @@ def render_episode_timeline(df):
         
         fig.update_layout(
             title=dict(
-                text='SONGS PER EPISODE',
+                text='配信回ごとの楽曲数',
                 font=dict(family='DotGothic16, sans-serif', size=20, color='#4ec9b0'),
                 x=0.5,
                 xanchor='center'
             ),
             xaxis=dict(
-                title='Episode Number',
+                title='配信回',
                 titlefont=dict(family='DotGothic16, sans-serif', size=14),
                 gridcolor='#2d3748',
                 showgrid=True,
                 color='#d4d4d8'
             ),
             yaxis=dict(
-                title='Number of Songs',
+                title='楽曲数',
                 titlefont=dict(family='DotGothic16, sans-serif', size=14),
                 gridcolor='#2d3748',
                 showgrid=True,
@@ -495,7 +640,7 @@ def render_enhanced_dashboard(df):
     st.markdown("---")
     
     # グラフセクション
-    st.markdown("### 📊 DATA INSIGHTS")
+    st.markdown("### 📊 データ分析")
     
     # 2カラムレイアウト
     col1, col2 = st.columns(2)
@@ -570,14 +715,14 @@ def render_song_cards_grid(df, key_suffix=""):
         c1, c2, c3 = st.columns([1, 2, 1])
         with c1:
             if st.session_state[page_key] > 0:
-                if st.button("◀ PREV", key=f"btn_prev_page_{key_suffix}"):
+                if st.button("◀ 前へ", key=f"btn_prev_page_{key_suffix}"):
                     st.session_state[page_key] -= 1
                     st.rerun()
         with c2:
-            st.markdown(f"<div style='text-align:center; padding-top:10px; font-family:var(--font-pixel);'>PAGE {st.session_state[page_key] + 1} / {total_pages}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='text-align:center; padding-top:10px; font-family:var(--font-pixel);'>ページ {st.session_state[page_key] + 1} / {total_pages}</div>", unsafe_allow_html=True)
         with c3:
             if st.session_state[page_key] < total_pages - 1:
-                if st.button("NEXT ▶", key=f"btn_next_page_{key_suffix}"):
+                if st.button("次へ ▶", key=f"btn_next_page_{key_suffix}"):
                     st.session_state[page_key] += 1
                     st.rerun()
 
@@ -678,8 +823,8 @@ def render_theme_list_page(df):
         # ダッシュボード表示（テーマ内統計）
         st.markdown(f"**紹介曲数: {len(theme_df)}曲**")
         
-        # テーマ詳細はカード型で見やすく
-        render_song_cards_grid(theme_df, key_suffix=f"theme_{target_theme}")
+        # グリッド表示に変更
+        display_results(theme_df, mode="theme", key=f"theme_{target_theme}")
 
 def render_archive_video(df, selected_themes):
     """
@@ -828,31 +973,54 @@ def render_random_card(row, df, key_suffix=""):
 
 def display_results(df, mode="search", key=None):
     """
-    検索結果を表示（カードビューとグリッドビューの切り替えに対応）
+    検索結果を表示（グリッド表示のみ）
     """
     if df.empty:
         st.info("該当する楽曲が見つかりませんでした。")
         return
 
-    # ビュー切り替えラジオボタン
-    view_mode = st.radio("View Mode:", ["Card", "Grid"], horizontal=True, key=f"view_mode_{key}", label_visibility="collapsed")
-
-    if view_mode == "Card":
-        render_song_cards_grid(df, key_suffix=key if key else "default")
-    else:
-        # 既存のAgGrid表示（レトロスタイル適用済み）
-        gb = GridOptionsBuilder.from_dataframe(df[['曲名', 'ゲーム名', 'ジャンル', 'プラットフォーム', '発表者', 'テーマ']])
-        gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=20)
-        gb.configure_selection('single', use_checkbox=False)
-        gb.configure_default_column(resizable=True, filterable=True, sortable=True)
-        gridOptions = gb.build()
-
-        AgGrid(
-            df,
-            gridOptions=gridOptions,
-            fit_columns_on_grid_load=True,
-            height=600,
-            theme='streamlit', # CSSで上書きしている
-            key=f"grid_{key}"
+    # ソート機能
+    col_label, col_sort = st.columns([0.8, 5])
+    with col_label:
+        st.markdown('<div style="padding-top: 8px; color: rgba(255, 255, 255, 0.7); font-weight: 600;">並び替え:</div>', unsafe_allow_html=True)
+    with col_sort:
+        sort_option = st.selectbox(
+            "並び順",
+            ["デフォルト（紹介順）", "曲名（あいうえお順）", "ゲーム名（あいうえお順）", "配信回（新しい順）", "配信回（古い順）"],
+            key=f"sort_{key}",
+            label_visibility="collapsed"
         )
+    
+    # ソート処理
+    df_sorted = df.copy()
+    if sort_option == "曲名（あいうえお順）":
+        df_sorted = df_sorted.sort_values('曲名')
+    elif sort_option == "ゲーム名（あいうえお順）":
+        df_sorted = df_sorted.sort_values('ゲーム名')
+    elif sort_option == "配信回（新しい順）":
+        if 'DISC' in df_sorted.columns:
+            df_sorted['_disc_num'] = pd.to_numeric(df_sorted['DISC'], errors='coerce')
+            df_sorted = df_sorted.sort_values('_disc_num', ascending=False)
+            df_sorted = df_sorted.drop(columns=['_disc_num'])
+    elif sort_option == "配信回（古い順）":
+        if 'DISC' in df_sorted.columns:
+            df_sorted['_disc_num'] = pd.to_numeric(df_sorted['DISC'], errors='coerce')
+            df_sorted = df_sorted.sort_values('_disc_num', ascending=True)
+            df_sorted = df_sorted.drop(columns=['_disc_num'])
+    
+    # グリッド表示のみ
+    gb = GridOptionsBuilder.from_dataframe(df_sorted[['曲名', 'ゲーム名', 'ジャンル', 'プラットフォーム', '発表者', 'テーマ']])
+    gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=20)
+    gb.configure_selection('single', use_checkbox=False)
+    gb.configure_default_column(resizable=True, filterable=True, sortable=True)
+    gridOptions = gb.build()
+
+    AgGrid(
+        df_sorted,
+        gridOptions=gridOptions,
+        fit_columns_on_grid_load=True,
+        height=600,
+        theme='streamlit',
+        key=f"grid_{key}"
+    )
 
