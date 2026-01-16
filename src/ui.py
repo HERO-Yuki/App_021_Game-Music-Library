@@ -200,6 +200,15 @@ def load_custom_css():
             background-color: var(--accent-primary) !important;
             color: #000000 !important;
         }
+
+        /* 詳細コンテナの余白調整 */
+        .theme-detail-container {
+            background-color: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1rem; /* 1.5remから1remに縮小 */
+            margin-top: 0.5rem;
+        }
         /* セレクトボックス */
         .stSelectbox > div > div {
              background-color: var(--card-bg) !important;
@@ -839,9 +848,9 @@ def render_archive_video(df, selected_themes):
     if not match.empty and 'アーカイブURL' in df.columns:
         url = match.iloc[0]['アーカイブURL']
         if url and str(url).startswith('http'):
-            st.markdown(f"### 📺 {target_theme} アーカイブ動画")
+            st.markdown(f'<h3 style="margin-top:0;">📺 {target_theme} アーカイブ動画</h3>', unsafe_allow_html=True)
             st.video(url)
-            st.markdown("---")
+            st.markdown('<hr style="margin: 1.5rem 0; border: none; border-top: 1px solid rgba(255,255,255,0.1);">', unsafe_allow_html=True)
 
 def clear_filters():
     """検索条件をすべてリセットする"""
