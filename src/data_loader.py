@@ -5,7 +5,7 @@ from googleapiclient.discovery import build
 import urllib.parse
 import re
 
-@st.cache_data(ttl=600)
+@st.cache_data(ttl=180)  # 180秒 = 3分（App_005からの反映を早めるため）
 def load_gsheet_data():
     """
     Google Sheetsからデータを読み込み、アーカイブ対応表と結合する
@@ -178,11 +178,11 @@ def preprocess_data(df):
     
     return df[existing_cols]
 
-@st.cache_data(ttl=600)
+@st.cache_data(ttl=180)
 def get_filter_options(df):
     """
     フィルター用のユニーク値リストを取得
-    キャッシュ: 10分間有効（データが変更されない限り、再計算を回避）
+    キャッシュ: 3分間有効（データが変更されない限り、再計算を回避）
     """
     # 配信テーマを数値（DISC）で降順（新しい順）にソートして取得
     themes = []

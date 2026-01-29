@@ -1,10 +1,21 @@
 # 語る会Library (Game-Music-Library)
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io)
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://app021game-music-library-fcbmaj5eielz8b5ijmr2k4.streamlit.app/)
+
+**🌐 公開URL**: [https://app021game-music-library-fcbmaj5eielz8b5ijmr2k4.streamlit.app/](https://app021game-music-library-fcbmaj5eielz8b5ijmr2k4.streamlit.app/)
 
 Googleスプレッドシートをデータベースとした、ゲーム音楽の検索・閲覧Webアプリケーション。
 
 過去に紹介された楽曲を、キーワード検索やフィルター機能（ジャンル、プラットフォーム、発表者、配信テーマ）を使って簡単に探すことができます。
+
+> **注意**: Streamlit Cloudの無料プランでは、7日間アクセスがないとアプリがスリープします。
+> 
+> ✅ **自動Wake Up設定済み**: [UptimeRobot](https://uptimerobot.com/)で12時間ごとに自動モニタリングを実行しています。これにより、24時間365日いつでもアクセス可能な状態を維持しています。
+> - **監視サービス**: UptimeRobot（無料プラン）
+> - **監視間隔**: 12時間ごと
+> - **稼働率**: 過去30日間で100%稼働
+> 
+> 💡 同様の設定を行いたい場合は、[自動Wake Up設定手順](docs/Streamlit_Cloud自動Wake_Up設定手順.md)を参照してください。
 
 ## 特徴
 
