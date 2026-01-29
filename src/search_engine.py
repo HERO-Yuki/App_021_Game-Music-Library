@@ -5,7 +5,7 @@ from thefuzz import fuzz
 @st.cache_data(ttl=300, show_spinner=False)
 def fuzzy_search(df, keyword, threshold=60):
     """
-    キーワードに基づいて曲名、ゲーム名、シリーズ、ディベロッパーなどを対象にあいまい検索を行う
+    キーワードに基づいて曲名、ゲーム名、シリーズなどを対象にあいまい検索を行う
     （パフォーマンス最適化: 同じキーワードとDataFrameの組み合わせはキャッシュを使用）
     
     Args:
@@ -26,7 +26,7 @@ def fuzzy_search(df, keyword, threshold=60):
         keyword_lower = keyword.lower().strip()
         
         # 検索対象のカラム
-        search_targets = ['曲名', 'ゲーム名', 'シリーズ', 'ディベロッパー']
+        search_targets = ['曲名', 'ゲーム名', 'シリーズ']
         # 実際に存在する列のみを対象にする
         available_targets = [c for c in search_targets if c in df.columns]
         

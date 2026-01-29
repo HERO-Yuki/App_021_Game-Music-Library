@@ -615,15 +615,19 @@ def render_episode_timeline(df):
                 xanchor='center'
             ),
             xaxis=dict(
-                title='配信回',
-                titlefont=dict(family='DotGothic16, sans-serif', size=14),
+                title=dict(
+                    text='配信回',
+                    font=dict(family='DotGothic16, sans-serif', size=14)
+                ),
                 gridcolor='#2d3748',
                 showgrid=True,
                 color='#d4d4d8'
             ),
             yaxis=dict(
-                title='楽曲数',
-                titlefont=dict(family='DotGothic16, sans-serif', size=14),
+                title=dict(
+                    text='楽曲数',
+                    font=dict(family='DotGothic16, sans-serif', size=14)
+                ),
                 gridcolor='#2d3748',
                 showgrid=True,
                 color='#d4d4d8'
@@ -824,7 +828,6 @@ def render_theme_list_page(df):
         theme_filters = {
             'テーマ': [target_theme],
             'ジャンル': [],
-            'プラットフォーム': [],
             '発表者': []
         }
         theme_df = apply_filters(df, theme_filters)
@@ -879,11 +882,6 @@ def render_filter_panel(filter_options):
                 key="selected_genres"
             )
         with col2:
-            selected_platform = st.multiselect(
-                "プラットフォーム",
-                options=filter_options['プラットフォーム'],
-                key="selected_platforms"
-            )
             selected_presenter = st.multiselect(
                 "発表者",
                 options=filter_options['発表者'],
@@ -895,18 +893,8 @@ def render_filter_panel(filter_options):
     return {
         'テーマ': selected_theme,
         'ジャンル': selected_genre,
-        'プラットフォーム': selected_platform,
         '発表者': selected_presenter
     }
-
-def _platform_match(val, platform_filters):
-    """
-    プラットフォーム文字列がフィルタ条件に一致するかチェック
-    """
-    if not val:
-        return False
-    parts = [p.strip() for p in str(val).replace('，', ',').replace('/', ',').split(',')]
-    return any(p in platform_filters for p in parts)
 
 @st.cache_data(ttl=300, show_spinner=False)
 def _apply_filters_impl(df, filters_tuple):
@@ -917,8 +905,7 @@ def _apply_filters_impl(df, filters_tuple):
         filters = {
             'テーマ': list(filters_tuple[0]) if filters_tuple[0] else [],
             'ジャンル': list(filters_tuple[1]) if filters_tuple[1] else [],
-            'プラットフォーム': list(filters_tuple[2]) if filters_tuple[2] else [],
-            '発表者': list(filters_tuple[3]) if filters_tuple[3] else []
+            '発表者': list(filters_tuple[2]) if filters_tuple[2] else []
         }
     except (IndexError, TypeError) as e:
         return df.copy()
@@ -931,11 +918,6 @@ def _apply_filters_impl(df, filters_tuple):
             
         if filters['ジャンル']:
             filtered_df = filtered_df[filtered_df['ジャンル'].isin(filters['ジャンル'])]
-            
-        if filters['プラットフォーム']:
-            filtered_df = filtered_df[filtered_df['プラットフォーム'].apply(
-                lambda val: _platform_match(val, filters['プラットフォーム'])
-            )]
             
         if filters['発表者']:
             filtered_df = filtered_df[filtered_df['発表者グループ'].isin(filters['発表者'])]
@@ -958,7 +940,6 @@ def apply_filters(df, filters):
         filters_tuple = (
             tuple(sorted(filters.get('テーマ', []))),
             tuple(sorted(filters.get('ジャンル', []))),
-            tuple(sorted(filters.get('プラットフォーム', []))),
             tuple(sorted(filters.get('発表者', [])))
         )
         return _apply_filters_impl(df, filters_tuple)
@@ -1018,7 +999,7 @@ def display_results(df, mode="search", key=None):
             df_sorted = df_sorted.drop(columns=['_disc_num'])
     
     # グリッド表示のみ
-    gb = GridOptionsBuilder.from_dataframe(df_sorted[['曲名', 'ゲーム名', 'ジャンル', 'プラットフォーム', '発表者', 'テーマ']])
+    gb = GridOptionsBuilder.from_dataframe(df_sorted[['曲名', 'ゲーム名', 'ジャンル', '発表者', 'テーマ']])
     gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=20)
     gb.configure_selection('single', use_checkbox=False)
     gb.configure_default_column(resizable=True, filterable=True, sortable=True)

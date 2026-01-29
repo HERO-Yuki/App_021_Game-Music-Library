@@ -29,7 +29,8 @@ def load_gsheet_data():
         service = build('sheets', 'v4', credentials=creds)
 
         # 1. メインデータの取得（紹介順）
-        main_range = f"{main_sheet_name}!A:M"
+        # A:J列まで（K,L,M列のディベロッパー・パブリッシャー・プラットフォームは除外）
+        main_range = f"{main_sheet_name}!A:J"
         main_result = service.spreadsheets().values().get(
             spreadsheetId=spreadsheet_id, range=main_range).execute()
         main_values = main_result.get('values', [])
@@ -173,7 +174,7 @@ def preprocess_data(df):
         df['通算'] = df['通算'].apply(pad_通算)
     
     # 表示用の列選択と型変換
-    display_cols = ['通算', 'DISC', 'テーマ', '表示用テーマ', '曲名', 'ゲーム名', 'ジャンル', 'プラットフォーム', '発表者', '発表者グループ', 'アーカイブURL']
+    display_cols = ['通算', 'DISC', 'テーマ', '表示用テーマ', '曲名', 'ゲーム名', 'ジャンル', '発表者', '発表者グループ', 'アーカイブURL']
     existing_cols = [c for c in display_cols if c in df.columns]
     
     return df[existing_cols]
@@ -204,23 +205,12 @@ def get_filter_options(df):
         # ID順に並べてユニークな名前を取得
         genre_list = df.sort_values('ジャンルID')['ジャンル'].unique().tolist()
 
-    # プラットフォームはカンマ区切りを考慮して展開
-    platforms = set()
-    if 'プラットフォーム' in df.columns:
-        for p_str in df['プラットフォーム'].unique():
-            if not p_str:
-                continue
-            # カンマ、全角カンマ、スラッシュなどで分割
-            parts = [p.strip() for p in p_str.replace('，', ',').replace('/', ',').split(',')]
-            platforms.update(parts)
-
     # 発表者は固定の5択（指定された順序）
     presenter_options = ['視聴者', '夕樹陽彩', '焔幽気', '松足楽瞬', 'ゲスト']
     
     options = {
         'テーマ': themes,
         'ジャンル': genre_list,
-        'プラットフォーム': sorted(list(platforms)),
         '発表者': presenter_options
     }
     # 空文字を除去

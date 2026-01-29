@@ -86,7 +86,6 @@ def main():
         filters_changed = (
             st.session_state['prev_filters']['テーマ'] != filters['テーマ'] or
             st.session_state['prev_filters']['ジャンル'] != filters['ジャンル'] or
-            st.session_state['prev_filters']['プラットフォーム'] != filters['プラットフォーム'] or
             st.session_state['prev_filters']['発表者'] != filters['発表者']
         )
         
