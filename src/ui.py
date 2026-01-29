@@ -436,7 +436,7 @@ def render_genre_distribution_chart(df):
         font=dict(family='DotGothic16, sans-serif', color='#d4d4d8'),
         showlegend=True,
         legend=dict(
-            font=dict(size=12),
+            font=dict(size=12, color='#ffffff'),
             bgcolor='rgba(0,0,0,0)',
             bordercolor='#2d3748',
             borderwidth=1
