@@ -328,11 +328,29 @@ def load_custom_css():
             font-family: var(--font-pixel) !important;
             font-weight: 600 !important;
         }
-        /* モバイル対応：列幅の最適化 */
+        /* モバイル対応：横スクロール表示 */
         @media (max-width: 768px) {
+            /* AgGridコンテナに横スクロールを強制 */
+            .ag-theme-streamlit {
+                width: 100% !important;
+                overflow-x: auto !important;
+            }
+            
+            /* 列幅を固定して省略を防ぐ */
             .ag-theme-streamlit .ag-header-cell,
             .ag-theme-streamlit .ag-cell {
-                min-width: 80px !important;
+                min-width: 120px !important;
+                white-space: nowrap !important;
+            }
+            
+            /* グリッドの最小幅を設定 */
+            .ag-theme-streamlit .ag-root-wrapper {
+                min-width: 600px !important;
+            }
+            
+            /* カードグリッドは1列表示に */
+            .song-card-grid {
+                grid-template-columns: 1fr !important;
             }
         }
 
@@ -1008,9 +1026,11 @@ def display_results(df, mode="search", key=None):
     AgGrid(
         df_sorted,
         gridOptions=gridOptions,
-        fit_columns_on_grid_load=True,
+        fit_columns_on_grid_load=False,
+        columns_auto_size_mode=ColumnsAutoSizeMode.NO_AUTOSIZE,
         height=600,
         theme='streamlit',
-        key=f"grid_{key}"
+        key=f"grid_{key}",
+        allow_unsafe_jscode=True
     )
 
